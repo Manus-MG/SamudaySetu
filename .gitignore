@@ -1,0 +1,22 @@
+.DS_Store
+node_modules/
+dist/
+build/
+coverage/
+.env
+.env.*
+!.env.example
+*.log
+.vscode/
+.idea/
+*.iml
+
+# Flutter / Dart
+.dart_tool/
+.pub-cache/
+.pub/
+samudaysetu/.dart_tool/
+samudaysetu/.idea/
+samudaysetu/build/
+samudaysetu/*.iml
+
