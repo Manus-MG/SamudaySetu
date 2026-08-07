@@ -1,0 +1,64 @@
+name: samudaysetu
+description: "Samuday Setu — community, hierarchy and membership platform."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.11.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # Navigation
+  go_router: ^14.6.2
+
+  # Networking
+  dio: ^5.7.0
+  connectivity_plus: ^6.1.1
+
+  # Offline-first storage. A Panna Pramukh works on 2G with no signal:
+  # every write lands in the local outbox first and syncs in the background.
+  drift: ^2.22.1
+  sqlite3_flutter_libs: ^0.5.26
+  path_provider: ^2.1.5
+  path: ^1.9.0
+
+  # Refresh tokens go here — never SharedPreferences.
+  flutter_secure_storage: ^9.2.2
+  shared_preferences: ^2.3.4
+
+  # Models
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+
+  intl: any
+  cached_network_image: ^3.4.1
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+  build_runner: ^2.4.14
+  freezed: ^2.5.8
+  json_serializable: ^6.9.0
+  riverpod_generator: ^2.6.3
+  drift_dev: ^2.22.1
+
+  custom_lint: ^0.7.0
+  riverpod_lint: ^2.6.3
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
