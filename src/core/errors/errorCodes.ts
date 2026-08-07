@@ -1,0 +1,32 @@
+/**
+ * Stable, machine-readable error codes. Flutter and the admin web app branch on
+ * these — never on the human-readable message.
+ */
+export const ErrorCode = {
+  VALIDATION_FAILED: 'VALIDATION_FAILED',
+
+  // Authentication
+  UNAUTHENTICATED: 'UNAUTHENTICATED',
+  TOKEN_EXPIRED: 'TOKEN_EXPIRED',
+  INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
+  SESSION_REVOKED: 'SESSION_REVOKED',
+  ACCOUNT_SUSPENDED: 'ACCOUNT_SUSPENDED',
+
+  // OTP
+  OTP_INVALID: 'OTP_INVALID',
+  OTP_EXPIRED: 'OTP_EXPIRED',
+  OTP_LOCKED: 'OTP_LOCKED',
+
+  // Authorisation
+  FORBIDDEN: 'FORBIDDEN',
+  ROLE_ESCALATION_DENIED: 'ROLE_ESCALATION_DENIED',
+
+  NOT_FOUND: 'NOT_FOUND',
+  CONFLICT: 'CONFLICT',
+  RATE_LIMITED: 'RATE_LIMITED',
+  AADHAAR_NOT_ALLOWED: 'AADHAAR_NOT_ALLOWED',
+  SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
+  INTERNAL: 'INTERNAL',
+} as const;
+
+export type ErrorCodeValue = (typeof ErrorCode)[keyof typeof ErrorCode];
