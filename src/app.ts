@@ -3,7 +3,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import compression from 'compression';
 import { pinoHttp } from 'pino-http';
-import { API_PREFIX, BODY_LIMIT, REQUEST_ID_HEADER, env } from './config/index.js';
+import { API_PREFIX, BODY_LIMIT, REQUEST_ID_HEADER } from './config/index.js';
 import { getContext } from './core/context/index.js';
 import { logger } from './core/logger/index.js';
 import {
@@ -47,9 +47,9 @@ export function createApp(): Express {
   app.use(helmet());
   app.use(
     cors({
-      origin: env.CORS_ORIGINS.length > 0 ? env.CORS_ORIGINS : false,
+      origin: true,
       credentials: true,
-      allowedHeaders: ['Content-Type', 'Authorization', REQUEST_ID_HEADER],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-Id', REQUEST_ID_HEADER],
       exposedHeaders: [REQUEST_ID_HEADER],
     }),
   );
