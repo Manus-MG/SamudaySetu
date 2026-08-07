@@ -75,8 +75,15 @@ export const otpService = {
     });
 
     // TODO: hand off to a DLT-registered Indian SMS provider behind an `SmsSender`
-    // interface. Until then the code is logged, and returned outside production.
-    logger.info({ phone, code }, 'OTP generated (no SMS provider configured)');
+    // interface. Until then the code is surfaced locally so the flow is testable.
+    //
+    // The code is never logged in production: log sinks are widely readable and
+    // long-lived, and a code sitting in them is a login sitting in them.
+    if (isProduction) {
+      logger.warn({ phone }, 'OTP generated but no SMS provider is configured');
+    } else {
+      logger.info({ phone, code }, 'OTP generated (development only — not sent)');
+    }
 
     return {
       expiresInSeconds: env.OTP_TTL_SECONDS,
