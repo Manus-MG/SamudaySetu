@@ -29,6 +29,22 @@ const envSchema = z.object({
   JWT_ACCESS_TTL: z.string().default('15m'),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(60),
 
+  /**
+   * Origin the join link points at. It ends up printed on posters and forwarded
+   * on WhatsApp, so it must be the public-facing host, not the API host.
+   */
+  PUBLIC_APP_BASE_URL: z
+    .string()
+    .url('PUBLIC_APP_BASE_URL must be an absolute URL')
+    .default('http://localhost:5173')
+    .transform((v) => v.replace(/\/+$/, '')),
+
+  /** Custom scheme for the Flutter app's deep link, without `://`. */
+  MOBILE_DEEP_LINK_SCHEME: z
+    .string()
+    .regex(/^[a-z][a-z0-9+.-]*$/, 'Scheme must be lowercase and URL-safe')
+    .default('samudaysetu'),
+
   OTP_TTL_SECONDS: z.coerce.number().int().positive().default(300),
   OTP_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
   OTP_PER_PHONE_PER_HOUR: z.coerce.number().int().positive().default(3),

@@ -19,6 +19,8 @@ export function toUserDto(doc: UserDocument): UserDto {
     role: doc.role,
     status: doc.status,
     isProfileComplete: doc.status !== 'PENDING_PROFILE' && Boolean(doc.fullName),
+    communityId: doc.communityId?.toString() ?? null,
+    joinedCommunityAt: toIso(doc.joinedCommunityAt),
     phoneVerifiedAt: toIso(doc.phoneVerifiedAt),
     lastLoginAt: toIso(doc.lastLoginAt),
     createdAt: doc.createdAt.toISOString(),

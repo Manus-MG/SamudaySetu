@@ -72,6 +72,30 @@ export const usersService = {
     return toUserDto(await getDocumentOrThrow(id));
   },
 
+  // ── Community membership ───────────────────────────────────────────────────
+  //
+  // Exposed on the service (rather than letting the communities module reach into
+  // `usersRepository`) so the `users` collection keeps exactly one owner. The
+  // communities service composes these with its own writes.
+
+  /** `null` when the user is already a member of some community. */
+  attachToCommunity(userId: string, communityId: string): Promise<UserDocument | null> {
+    return usersRepository.attachToCommunity(userId, communityId);
+  },
+
+  /** `null` when the user was not a member of that community. */
+  detachFromCommunity(userId: string, communityId: string): Promise<UserDocument | null> {
+    return usersRepository.detachFromCommunity(userId, communityId);
+  },
+
+  detachAllFromCommunity(communityId: string): Promise<number> {
+    return usersRepository.detachAllFromCommunity(communityId);
+  },
+
+  countByCommunity(communityId: string): Promise<number> {
+    return usersRepository.countByCommunity(communityId);
+  },
+
   async updateProfile(id: string, patch: UpdateProfileInput): Promise<UserDto> {
     await getDocumentOrThrow(id);
     const updated = await usersRepository.updateProfile(id, patch);
