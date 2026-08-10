@@ -13,8 +13,8 @@ async function bootstrap(): Promise<void> {
   await connectMongo();
 
   const app = createApp();
-  const server: Server = app.listen(env.PORT, () => {
-    logger.info(`API listening on http://localhost:${env.PORT} [${env.NODE_ENV}]`);
+  const server: Server = app.listen(env.PORT, '0.0.0.0', () => {
+    logger.info(`API listening on http://127.0.0.1:${env.PORT} [${env.NODE_ENV}]`);
   });
 
   registerShutdownHandlers(server);

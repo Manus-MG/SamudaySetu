@@ -1,20 +1,31 @@
 import React from 'react';
-import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
+import { createBrowserRouter, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from '../features/auth/AuthContext.tsx';
 import { ThemeProvider } from '../features/theme/ThemeContext.tsx';
 import { AdminLayout } from '../components/layout/AdminLayout.tsx';
+import { FullPageSpinner } from '../components/ui/spinner.tsx';
 import { LoginPage } from '../features/auth/LoginPage.tsx';
-import { SuperAdminDashboardPage } from '../features/dashboard/SuperAdminDashboardPage.tsx';
+import { DashboardPage } from '../features/dashboard/DashboardPage.tsx';
 import { SystemHealthPage } from '../features/health/SystemHealthPage.tsx';
-import { TenantsPage } from '../features/tenants/TenantsPage.tsx';
 import { StaffUsersPage } from '../features/users/StaffUsersPage.tsx';
 import { AuditLogsPage } from '../features/audit/AuditLogsPage.tsx';
+import { NotFoundPage } from '../features/errors/NotFoundPage.tsx';
 
-/** Protected layout wrapper requiring authenticated staff user */
-function ProtectedAdminLayout(): React.JSX.Element {
-  const { isAuthenticated } = useAuth();
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+/**
+ * Gate for everything behind sign-in.
+ *
+ * The `loading` branch is what makes a hard refresh work: without it, the first
+ * render happens before `/users/me` answers and every reload lands on /login.
+ */
+function ProtectedLayout(): React.JSX.Element {
+  const { status } = useAuth();
+  const location = useLocation();
+
+  if (status === 'loading') return <FullPageSpinner label="Restoring your session…" />;
+
+  if (status === 'unauthenticated') {
+    // Remember the destination so sign-in can return the user to it.
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
   return (
@@ -24,7 +35,6 @@ function ProtectedAdminLayout(): React.JSX.Element {
   );
 }
 
-/** Root App context wrapper with ThemeProvider */
 function RootLayout(): React.JSX.Element {
   return (
     <ThemeProvider>
@@ -41,16 +51,15 @@ export const router = createBrowserRouter([
     children: [
       { path: '/login', element: <LoginPage /> },
       {
-        element: <ProtectedAdminLayout />,
+        element: <ProtectedLayout />,
         children: [
-          { path: '/', element: <SuperAdminDashboardPage /> },
+          { path: '/', element: <DashboardPage /> },
           { path: '/health', element: <SystemHealthPage /> },
-          { path: '/tenants', element: <TenantsPage /> },
           { path: '/users', element: <StaffUsersPage /> },
           { path: '/audit', element: <AuditLogsPage /> },
         ],
       },
-      { path: '*', element: <Navigate to="/" replace /> },
+      { path: '*', element: <NotFoundPage /> },
     ],
   },
 ]);
