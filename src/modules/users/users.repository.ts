@@ -24,10 +24,15 @@ function escapeRegex(input: string): string {
 }
 
 function buildListQuery(filter: ListUsersFilter): FilterQuery<UserDocument> {
-  const query: FilterQuery<UserDocument> = { status: { $ne: 'DELETED' } };
+  const query: FilterQuery<UserDocument> = {};
 
-  if (filter.role) query.role = filter.role;
-  if (filter.status) query.status = filter.status;
+  if (filter.status) {
+    query.status = filter.status;
+  }
+
+  if (filter.role) {
+    query.role = filter.role;
+  }
 
   if (filter.search) {
     const term = new RegExp(escapeRegex(filter.search), 'i');
@@ -145,6 +150,6 @@ export const usersRepository = {
   },
 
   countByRole(role: Role): Promise<number> {
-    return UserModel.countDocuments({ role, status: { $ne: 'DELETED' } }).exec();
+    return UserModel.countDocuments({ role, status: 'ACTIVE' }).exec();
   },
 };

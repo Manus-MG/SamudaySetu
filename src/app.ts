@@ -3,7 +3,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import compression from 'compression';
 import { pinoHttp } from 'pino-http';
-import { API_PREFIX, BODY_LIMIT, REQUEST_ID_HEADER } from './config/index.js';
+import { API_PREFIX, BODY_LIMIT, env, isProduction, REQUEST_ID_HEADER } from './config/index.js';
 import { getContext } from './core/context/index.js';
 import { logger } from './core/logger/index.js';
 import {
@@ -16,6 +16,28 @@ import {
 import { apiRouter } from './modules/index.js';
 
 const HEALTH_PATH_PREFIX = `${API_PREFIX}/health`;
+
+/**
+ * Resolves a browser `Origin` against the `CORS_ORIGINS` allow-list.
+ *
+ * Requests without an `Origin` header — curl, the Flutter app, server-to-server —
+ * are allowed through: CORS is a browser mechanism and blocking them here would
+ * only break non-browser clients while stopping no attacker.
+ *
+ * Outside production an empty allow-list falls back to reflecting the origin, so
+ * a fresh clone with no `.env` still works against `vite dev`. In production an
+ * empty list denies every browser origin, which is the safe failure mode.
+ */
+function resolveCorsOrigin(
+  origin: string | undefined,
+  callback: (err: Error | null, allow?: boolean) => void,
+): void {
+  if (!origin) return callback(null, true);
+
+  if (env.CORS_ORIGINS.length === 0) return callback(null, !isProduction);
+
+  callback(null, env.CORS_ORIGINS.includes(origin));
+}
 
 /**
  * Builds the Express application. Kept free of any I/O so tests can mount the app
@@ -47,7 +69,10 @@ export function createApp(): Express {
   app.use(helmet());
   app.use(
     cors({
-      origin: true,
+      // An allow-list, not `origin: true`. Reflecting any origin while
+      // `credentials` is on lets any site on the internet make authenticated
+      // requests on a signed-in user's behalf.
+      origin: resolveCorsOrigin,
       credentials: true,
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-Id', REQUEST_ID_HEADER],
       exposedHeaders: [REQUEST_ID_HEADER],
