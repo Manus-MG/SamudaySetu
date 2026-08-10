@@ -1,5 +1,7 @@
 import { Router } from 'express';
+import { auditRoutes } from './audit/index.js';
 import { authRoutes } from './auth/index.js';
+import { communityRoutes } from './communities/index.js';
 import { healthRoutes, statusRoutes } from './health/index.js';
 import { userRoutes } from './users/index.js';
 
@@ -13,3 +15,5 @@ apiRouter.use('/health', healthRoutes);
 apiRouter.use('/status', statusRoutes);
 apiRouter.use('/auth', authRoutes);
 apiRouter.use('/users', userRoutes);
+apiRouter.use('/communities', communityRoutes);
+apiRouter.use('/audit', auditRoutes);

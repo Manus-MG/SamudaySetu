@@ -80,10 +80,155 @@ export interface UserDto {
   role: Role;
   status: UserStatus;
   isProfileComplete: boolean;
+  communityId: string | null;
+  joinedCommunityAt: string | null;
   phoneVerifiedAt: string | null;
   lastLoginAt: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+// ── Communities (backend/src/modules/communities/communities.types.ts) ───────
+
+export const COMMUNITY_STATUSES = [
+  'PENDING_APPROVAL',
+  'ACTIVE',
+  'REJECTED',
+  'SUSPENDED',
+  'ARCHIVED',
+] as const;
+export type CommunityStatus = (typeof COMMUNITY_STATUSES)[number];
+
+export const COMMUNITY_STATUS_LABELS: Readonly<Record<CommunityStatus, string>> = Object.freeze({
+  PENDING_APPROVAL: 'Pending approval',
+  ACTIVE: 'Active',
+  REJECTED: 'Rejected',
+  SUSPENDED: 'Suspended',
+  ARCHIVED: 'Archived',
+});
+
+export const COMMUNITY_TYPES = [
+  'SAMAJ',
+  'POLITICAL',
+  'RWA',
+  'ALUMNI',
+  'NGO',
+  'TRADE_BODY',
+  'OTHER',
+] as const;
+export type CommunityType = (typeof COMMUNITY_TYPES)[number];
+
+export const COMMUNITY_TYPE_LABELS: Readonly<Record<CommunityType, string>> = Object.freeze({
+  SAMAJ: 'Samaj / caste community',
+  POLITICAL: 'Political organisation',
+  RWA: 'Resident welfare association',
+  ALUMNI: 'Alumni network',
+  NGO: 'NGO / trust',
+  TRADE_BODY: 'Trade body / union',
+  OTHER: 'Other',
+});
+
+/** Mirrors the server's transition table; the server rejects anything else. */
+export const MODERATION_ACTIONS = ['APPROVE', 'REJECT', 'SUSPEND', 'REACTIVATE'] as const;
+export type ModerationAction = (typeof MODERATION_ACTIONS)[number];
+
+/**
+ * Which moderation actions are legal from a given status. Duplicated client-side
+ * only so the UI can hide buttons that would 409 — the server is the authority.
+ */
+export const ALLOWED_MODERATION: Readonly<Record<CommunityStatus, readonly ModerationAction[]>> =
+  Object.freeze({
+    PENDING_APPROVAL: ['APPROVE', 'REJECT'],
+    ACTIVE: ['SUSPEND'],
+    SUSPENDED: ['REACTIVATE'],
+    REJECTED: [],
+    ARCHIVED: [],
+  });
+
+export interface CommunityLocation {
+  state: string | null;
+  district: string | null;
+  city: string | null;
+  pincode: string | null;
+}
+
+export interface CommunityDto {
+  id: string;
+  name: string;
+  description: string | null;
+  type: CommunityType;
+  status: CommunityStatus;
+  joinCode: string;
+  joinCodeFormatted: string;
+  joinCodeUpdatedAt: string;
+  leaderId: string | null;
+  createdBy: string;
+  approvedBy: string | null;
+  approvedAt: string | null;
+  rejectionReason: string | null;
+  memberCount: number;
+  isJoinable: boolean;
+  isAcceptingMembers: boolean;
+  location: CommunityLocation;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Everything needed to get a member through the door, in one response. */
+export interface JoinKitDto {
+  communityId: string;
+  communityName: string;
+  joinCode: string;
+  joinCodeFormatted: string;
+  joinUrl: string;
+  deepLink: string;
+  /** SVG data URL, ready for `<img src>`. */
+  qrDataUrl: string;
+  shareMessage: string;
+}
+
+// ── Audit (backend/src/modules/audit/audit.types.ts) ─────────────────────────
+
+export const AUDIT_ACTIONS = [
+  'COMMUNITY_CREATED',
+  'COMMUNITY_UPDATED',
+  'COMMUNITY_APPROVED',
+  'COMMUNITY_REJECTED',
+  'COMMUNITY_SUSPENDED',
+  'COMMUNITY_REACTIVATED',
+  'COMMUNITY_ARCHIVED',
+  'COMMUNITY_LEADER_ASSIGNED',
+  'COMMUNITY_LEADER_REMOVED',
+  'COMMUNITY_JOIN_CODE_ROTATED',
+  'COMMUNITY_JOINING_OPENED',
+  'COMMUNITY_JOINING_CLOSED',
+  'COMMUNITY_MEMBER_JOINED',
+  'COMMUNITY_MEMBER_LEFT',
+  'USER_CREATED',
+  'USER_ROLE_ASSIGNED',
+  'USER_STATUS_CHANGED',
+  'USER_DELETED',
+] as const;
+export type AuditAction = (typeof AUDIT_ACTIONS)[number];
+
+export const AUDIT_RESOURCE_TYPES = ['COMMUNITY', 'USER'] as const;
+export type AuditResourceType = (typeof AUDIT_RESOURCE_TYPES)[number];
+
+export interface AuditLogDto {
+  id: string;
+  actorId: string;
+  actorRole: Role;
+  action: AuditAction;
+  resourceType: AuditResourceType;
+  resourceId: string;
+  communityId: string | null;
+  summary: string;
+  metadata: Record<string, unknown> | null;
+  ip: string | null;
+  requestId: string | null;
+  createdAt: string;
 }
 
 // ── Auth (backend/src/modules/auth/auth.types.ts) ────────────────────────────
@@ -159,4 +304,55 @@ export interface CreateStaffUserPayload {
   role: Role;
   phone?: string;
   preferredLanguage?: SupportedLanguage;
+}
+
+export interface ListCommunitiesParams {
+  status?: CommunityStatus;
+  type?: CommunityType;
+  leaderId?: string;
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface CreateCommunityPayload {
+  name: string;
+  type: CommunityType;
+  description?: string;
+  leaderId?: string;
+  location?: { state?: string; district?: string; city?: string; pincode?: string };
+  contactEmail?: string;
+  contactPhone?: string;
+}
+
+/**
+ * `null` and absent mean different things: `null` clears the field, absent leaves
+ * it alone. Mirrors the server's `updateCommunitySchema`.
+ */
+export interface UpdateCommunityPayload {
+  name?: string;
+  description?: string | null;
+  type?: CommunityType;
+  location?: { state?: string; district?: string; city?: string; pincode?: string };
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+  isJoinable?: boolean;
+}
+
+export interface ListMembersParams {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ListAuditParams {
+  action?: AuditAction;
+  resourceType?: AuditResourceType;
+  resourceId?: string;
+  actorId?: string;
+  communityId?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  pageSize?: number;
 }

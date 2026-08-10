@@ -6,59 +6,37 @@ version: 0.1.0+1
 environment:
   sdk: ^3.11.1
 
+# Every dependency here earns its place. The target device is a ~₹7,000 Android
+# phone with 2 GB RAM on a 2G/3G connection, so an unused package is not free —
+# it is APK size, cold-start time and one more thing that can break on upgrade.
 dependencies:
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
 
-  # State management
+  # UI system. Brings lucide icons and flutter_animate with it.
+  shadcn_ui: ^0.56.1
+
+  # Declared explicitly rather than leaned on transitively through shadcn_ui:
+  # depending on someone else's dependency means their minor bump is our breakage.
+  flutter_animate: ^4.5.0
+
   flutter_riverpod: ^2.6.1
-  riverpod_annotation: ^2.6.1
-
-  # Navigation
   go_router: ^14.6.2
-
-  # Networking
   dio: ^5.7.0
-  connectivity_plus: ^6.1.1
 
-  # Offline-first storage. A Panna Pramukh works on 2G with no signal:
-  # every write lands in the local outbox first and syncs in the background.
-  drift: ^2.22.1
-  sqlite3_flutter_libs: ^0.5.26
-  path_provider: ^2.1.5
-  path: ^1.9.0
-
-  # Refresh tokens go here — never SharedPreferences.
+  # Tokens go in the platform keystore/keychain.
   flutter_secure_storage: ^9.2.2
+  # Non-secret flags only (has the user seen onboarding).
   shared_preferences: ^2.3.4
-
-  # Models
-  freezed_annotation: ^2.4.4
-  json_annotation: ^4.9.0
-
-  intl: any
-  cached_network_image: ^3.4.1
-  cupertino_icons: ^1.0.8
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-
-  build_runner: ^2.4.14
-  freezed: ^2.5.8
-  json_serializable: ^6.9.0
-  riverpod_generator: ^2.6.3
-  drift_dev: ^2.22.1
-
   custom_lint: ^0.7.0
   riverpod_lint: ^2.6.3
 
 flutter:
   uses-material-design: true
-
-  assets:
-    - assets/images/
-    - assets/icons/

@@ -1,4 +1,4 @@
-import type { FilterQuery, UpdateQuery } from 'mongoose';
+import { Types, type FilterQuery, type UpdateQuery } from 'mongoose';
 import type { Role } from '../../core/security/index.js';
 import { UserModel, type UserDocument } from './users.model.js';
 import type {
@@ -32,6 +32,10 @@ function buildListQuery(filter: ListUsersFilter): FilterQuery<UserDocument> {
 
   if (filter.role) {
     query.role = filter.role;
+  }
+
+  if (filter.communityId) {
+    query.communityId = new Types.ObjectId(filter.communityId);
   }
 
   if (filter.search) {
@@ -117,7 +121,57 @@ export const usersRepository = {
       gender: null,
       passwordHash: null,
       phoneVerifiedAt: null,
+      communityId: null,
+      joinedCommunityAt: null,
     });
+  },
+
+  // ── Community membership ───────────────────────────────────────────────────
+
+  /**
+   * Attaches a member to a community, but only if they are not already in one.
+   *
+   * The `communityId: null` guard is inside the query, not a preceding read: two
+   * taps on a slow connection arrive as two concurrent requests, and a
+   * read-then-write would let both succeed and double-count the member. The
+   * caller treats a `null` return as "already a member of something".
+   */
+  attachToCommunity(userId: string, communityId: string): Promise<LeanUser> {
+    return UserModel.findOneAndUpdate(
+      { _id: userId, communityId: null },
+      { communityId: new Types.ObjectId(communityId), joinedCommunityAt: new Date() },
+      { new: true, runValidators: true },
+    )
+      .lean<UserDocument>()
+      .exec();
+  },
+
+  /** Mirror of `attachToCommunity`: only detaches from the community named. */
+  detachFromCommunity(userId: string, communityId: string): Promise<LeanUser> {
+    return UserModel.findOneAndUpdate(
+      { _id: userId, communityId: new Types.ObjectId(communityId) },
+      { communityId: null, joinedCommunityAt: null },
+      { new: true, runValidators: true },
+    )
+      .lean<UserDocument>()
+      .exec();
+  },
+
+  /** Used when a community is archived. Returns how many members were released. */
+  async detachAllFromCommunity(communityId: string): Promise<number> {
+    const result = await UserModel.updateMany(
+      { communityId: new Types.ObjectId(communityId) },
+      { communityId: null, joinedCommunityAt: null },
+    ).exec();
+    return result.modifiedCount;
+  },
+
+  /** Authoritative member count, as opposed to the denormalised counter. */
+  countByCommunity(communityId: string): Promise<number> {
+    return UserModel.countDocuments({
+      communityId: new Types.ObjectId(communityId),
+      status: { $ne: 'DELETED' },
+    }).exec();
   },
 
   /** Fire-and-forget: a failed timestamp write must never fail the login itself. */

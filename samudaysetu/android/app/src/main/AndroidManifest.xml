@@ -1,6 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The app is useless without the network. Flutter only adds this to the
+         debug and profile manifests by default, so a release build without it
+         fails every API call with no error the user can act on. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <application
-        android:label="samudaysetu"
+        android:label="Samuday Setu"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

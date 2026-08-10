@@ -26,6 +26,9 @@ export interface UserDto {
   role: Role;
   status: UserStatus;
   isProfileComplete: boolean;
+  /** The community this account is a member of, or `null`. */
+  communityId: string | null;
+  joinedCommunityAt: string | null;
   phoneVerifiedAt: string | null;
   lastLoginAt: string | null;
   createdAt: string;
@@ -57,6 +60,8 @@ export interface ListUsersFilter {
   status?: UserStatus;
   /** Matches against name, phone or email. */
   search?: string;
+  /** Restricts the result to members of one community. */
+  communityId?: string;
   page: number;
   pageSize: number;
 }

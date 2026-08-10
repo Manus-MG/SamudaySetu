@@ -35,6 +35,19 @@ export const PERMISSIONS = [
   'user:role:assign',
   'user:status:manage',
   'session:revoke',
+
+  // Communities. `community:moderate` is the approve/reject/suspend verb and is
+  // deliberately separate from `community:update`: a leader edits their own
+  // community's details but must never be able to approve it.
+  'community:create',
+  'community:read',
+  'community:update',
+  'community:delete',
+  'community:moderate',
+  'community:leader:assign',
+  'community:code:manage',
+
+  'audit:read',
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -43,7 +56,14 @@ const ALL_PERMISSIONS: readonly Permission[] = PERMISSIONS;
 
 /**
  * `USER` intentionally holds no permissions: acting on yourself goes through the
- * `/users/me` routes, which are authorised by identity rather than by permission.
+ * `/users/me` routes, and joining a community goes through `/communities/join`,
+ * both of which are authorised by identity rather than by permission.
+ *
+ * Holding a permission is necessary but not sufficient. A `LEADER` has
+ * `community:update`, but the service layer additionally scopes every community
+ * write to the one community they lead — see `assertMayManage` in
+ * `communities.service.ts`. Permissions answer "may this role ever do this?";
+ * scoping answers "to this specific row?".
  */
 const PERMISSION_MATRIX: Readonly<Record<Role, readonly Permission[]>> = Object.freeze({
   SUPER_ADMIN: ALL_PERMISSIONS,
@@ -54,8 +74,23 @@ const PERMISSION_MATRIX: Readonly<Record<Role, readonly Permission[]>> = Object.
     'user:role:assign',
     'user:status:manage',
     'session:revoke',
+    'community:create',
+    'community:read',
+    'community:update',
+    'community:moderate',
+    'community:leader:assign',
+    'community:code:manage',
+    'audit:read',
   ] as const),
-  LEADER: Object.freeze(['user:read'] as const),
+  // A leader may propose exactly one community and run it once approved. They
+  // cannot approve it, cannot assign its leader, and cannot delete it.
+  LEADER: Object.freeze([
+    'user:read',
+    'community:create',
+    'community:read',
+    'community:update',
+    'community:code:manage',
+  ] as const),
   USER: Object.freeze([] as const),
 });
 

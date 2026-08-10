@@ -15,6 +15,16 @@ export interface UserDocument {
   preferredLanguage: SupportedLanguage;
   role: Role;
   status: UserStatus;
+  /**
+   * The community this account belongs to as a member, or `null`.
+   *
+   * Exactly one, by product decision: a member joins a single community with a
+   * single code. Staff accounts (`ADMIN`, `SUPER_ADMIN`) leave this `null` — they
+   * administer communities rather than belong to one — and a `LEADER`'s link to
+   * the community they run lives on `communities.leaderId`, not here.
+   */
+  communityId: Types.ObjectId | null;
+  joinedCommunityAt: Date | null;
   phoneVerifiedAt: Date | null;
   lastLoginAt: Date | null;
   createdAt: Date;
@@ -45,6 +55,9 @@ const userSchema = new Schema<UserDocument>(
     role: { type: String, enum: ROLES, required: true, default: 'USER' },
     status: { type: String, enum: USER_STATUSES, required: true, default: 'PENDING_PROFILE' },
 
+    communityId: { type: Schema.Types.ObjectId, ref: 'Community', default: null },
+    joinedCommunityAt: { type: Date, default: null },
+
     phoneVerifiedAt: { type: Date, default: null },
     lastLoginAt: { type: Date, default: null },
   },
@@ -70,5 +83,9 @@ userSchema.index(
 
 // Admin directory: filter by role/status, newest first.
 userSchema.index({ role: 1, status: 1, createdAt: -1 });
+
+// Community member directory, and the counter reconciliation query. Leads with
+// `communityId` so it can serve both the filtered list and the count.
+userSchema.index({ communityId: 1, status: 1, createdAt: -1 });
 
 export const UserModel: Model<UserDocument> = model<UserDocument>('User', userSchema);
