@@ -2,7 +2,11 @@ import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../../lib/utils.ts';
 
-const buttonVariants = cva(
+/**
+ * Exported so non-button elements that must look like buttons — a router `Link`,
+ * for instance — share exactly one source of styling.
+ */
+export const buttonVariants = cva(
   'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]',
   {
     variants: {
@@ -35,14 +39,15 @@ const buttonVariants = cva(
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean;
-}
+    VariantProps<typeof buttonVariants> {}
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, ...props }, ref) => {
+  ({ className, variant, size, type = 'button', ...props }, ref) => {
     return (
+      // Defaulting to `type="button"` matters: an untyped button inside a form is
+      // a submit button, so every icon button would submit the form.
       <button
+        type={type}
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
         {...props}
