@@ -31,6 +31,12 @@ dependencies:
   # Non-secret flags only (has the user seen onboarding).
   shared_preferences: ^2.3.4
 
+  # Opens WhatsApp, the dialer and the join link in a browser. It earns its place
+  # because forwarding an invite on WhatsApp *is* the product's delivery
+  # mechanism for a low-literacy audience — copying a URL to the clipboard and
+  # hoping the user finds the right chat is not a substitute.
+  url_launcher: ^6.3.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

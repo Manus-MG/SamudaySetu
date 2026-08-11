@@ -3,9 +3,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/application/session_controller.dart';
+import '../../features/auth/domain/app_user.dart';
 import '../../features/auth/presentation/otp_screen.dart';
 import '../../features/auth/presentation/phone_screen.dart';
+import '../../features/community/domain/community.dart';
+import '../../features/community/presentation/confirm_community_screen.dart';
+import '../../features/community/presentation/invite_screen.dart';
+import '../../features/community/presentation/join_community_screen.dart';
+import '../../features/community/presentation/community_form_screen.dart';
+import '../../features/community/presentation/invites_screen.dart';
+import '../../features/community/presentation/joined_community_screen.dart';
+import '../../features/community/presentation/leader_dashboard_screen.dart';
+import '../../features/community/presentation/members_screen.dart';
+import '../../features/community/presentation/my_community_screen.dart';
+import '../../features/community/presentation/share_kit_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
+import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
 import 'routes.dart';
@@ -17,17 +30,38 @@ import 'transitions.dart';
 /// recreated on every state change — recreating a `GoRouter` throws away the
 /// navigation stack and remounts every screen, which is both a visible flicker
 /// and a lost text field.
+/// Where a signed-in user belongs, by role.
+///
+/// Leaders get their own landing because their job is running a community, not
+/// belonging to one; admins and super admins work in the web console and only
+/// ever land here to check their own account.
+String landingFor(UserRole? role) =>
+    role == UserRole.leader ? AppRoutes.leader : AppRoutes.home;
+
+/// A destination a signed-out user tapped, held until they have signed in.
+///
+/// Module-level rather than provider state because the redirect callback is
+/// synchronous and runs outside any widget build — reading a provider there
+/// would be a lie about when the value is available.
+final ValueNotifier<String?> pendingDeepLink = ValueNotifier<String?>(null);
+
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
   ref.onDispose(refresh.dispose);
 
   // Only the fields that can change a redirect decision. Listening to the whole
   // state would re-evaluate routing every time an unrelated field moved.
-  ref.listen<({SessionStatus status, bool onboardingSeen})>(
+  ref.listen<({SessionStatus status, bool onboardingSeen, UserRole? role})>(
     sessionControllerProvider.select(
-      (state) => (status: state.status, onboardingSeen: state.onboardingSeen),
+      (state) => (
+        status: state.status,
+        onboardingSeen: state.onboardingSeen,
+        // A demotion or promotion changes which home screen is correct, so the
+        // role belongs in this projection even though it rarely moves.
+        role: state.user?.role,
+      ),
     ),
-    (_, __) => refresh.value++,
+    (_, _) => refresh.value++,
   );
 
   return GoRouter(
@@ -51,11 +85,42 @@ final routerProvider = Provider<GoRouter>((ref) {
       final inAuthFlow = location == AppRoutes.phone || location == AppRoutes.otp;
 
       if (session.isSignedIn) {
+        // A deep link that arrived before sign-in was parked; now that there is
+        // a session, honour it instead of dropping the user on the home screen.
+        // Without this, tapping a WhatsApp invite while signed out means signing
+        // in and then having to find the invite message again.
+        final pending = pendingDeepLink.value;
+        if (pending != null) {
+          pendingDeepLink.value = null;
+          return pending;
+        }
+
         // Signed-in users have no business on the splash, in onboarding, or in
         // the auth flow — all three would let them sign in a second time.
         final isPreAuthScreen =
             inAuthFlow || location == AppRoutes.splash || location == AppRoutes.onboarding;
-        return isPreAuthScreen ? AppRoutes.home : null;
+        if (isPreAuthScreen) return landingFor(session.user?.role);
+
+        // A leader who somehow reaches the member home, or vice versa, is sent
+        // to their own. Enforced here rather than by hiding buttons: a deep link
+        // or a stale back-stack can reach either screen.
+        if (location == AppRoutes.home && session.user?.role == UserRole.leader) {
+          return AppRoutes.leader;
+        }
+        if (location.startsWith(AppRoutes.leader) && session.user?.role != UserRole.leader) {
+          return AppRoutes.home;
+        }
+
+        return null;
+      }
+
+      // Park a join or invite destination before bouncing to sign-in. Both are
+      // links people tap from outside the app, so arriving signed-out is the
+      // normal case, not the edge case.
+      if (location.startsWith(AppRoutes.invite) ||
+          location.startsWith(AppRoutes.joinCommunity)) {
+        pendingDeepLink.value = state.uri.toString();
+        return AppRoutes.phone;
       }
 
       return inAuthFlow ? null : AppRoutes.phone;
@@ -112,6 +177,148 @@ final routerProvider = Provider<GoRouter>((ref) {
           key: state.pageKey,
           child: const HomeScreen(),
         ),
+      ),
+
+      // ── Joining a community ────────────────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.joinCommunity,
+        pageBuilder: (context, state) => fadeThroughPage<void>(
+          key: state.pageKey,
+          child: const JoinCommunityScreen(),
+        ),
+        routes: <RouteBase>[
+          GoRoute(
+            path: 'confirm',
+            pageBuilder: (context, state) {
+              final preview = state.extra;
+
+              // Reached without a resolved preview — a deep link straight to
+              // /join/confirm, or a hot reload. Send them to enter a code
+              // rather than render a screen with nothing to confirm.
+              if (preview is! CommunityPreview) {
+                return fadeThroughPage<void>(
+                  key: state.pageKey,
+                  child: const JoinCommunityScreen(),
+                );
+              }
+
+              return slidePage<void>(
+                key: state.pageKey,
+                child: ConfirmCommunityScreen(preview: preview),
+              );
+            },
+          ),
+          GoRoute(
+            path: 'done',
+            pageBuilder: (context, state) {
+              final community = state.extra;
+
+              if (community is! Community) {
+                return fadeThroughPage<void>(
+                  key: state.pageKey,
+                  child: const HomeScreen(),
+                );
+              }
+
+              return fadeThroughPage<void>(
+                key: state.pageKey,
+                child: JoinedCommunityScreen(community: community),
+              );
+            },
+          ),
+          GoRoute(
+            // `/join/<code>` — a scanned QR or a tapped poster link. The code
+            // is a path segment because it arrives from outside the app, where
+            // there is no `extra` to carry it in. It is not PII, unlike the
+            // phone number the auth flow deliberately keeps out of the path.
+            path: ':code',
+            pageBuilder: (context, state) => fadeThroughPage<void>(
+              key: state.pageKey,
+              child: JoinCommunityScreen(initialCode: state.pathParameters['code']),
+            ),
+          ),
+        ],
+      ),
+
+      GoRoute(
+        path: AppRoutes.profile,
+        pageBuilder: (context, state) => fadeThroughPage<void>(
+          key: state.pageKey,
+          child: const ProfileScreen(),
+        ),
+      ),
+
+      GoRoute(
+        path: AppRoutes.myCommunity,
+        pageBuilder: (context, state) => fadeThroughPage<void>(
+          key: state.pageKey,
+          child: const MyCommunityScreen(),
+        ),
+      ),
+
+      // ── Running a community ────────────────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.leader,
+        pageBuilder: (context, state) => fadeThroughPage<void>(
+          key: state.pageKey,
+          child: const LeaderDashboardScreen(),
+        ),
+        routes: <RouteBase>[
+          GoRoute(
+            path: 'create',
+            pageBuilder: (context, state) => slidePage<void>(
+              key: state.pageKey,
+              child: const CommunityFormScreen(mode: CommunityFormMode.create),
+            ),
+          ),
+          GoRoute(
+            path: 'edit',
+            pageBuilder: (context, state) => slidePage<void>(
+              key: state.pageKey,
+              child: const CommunityFormScreen(mode: CommunityFormMode.edit),
+            ),
+          ),
+          GoRoute(
+            path: 'share',
+            pageBuilder: (context, state) => slidePage<void>(
+              key: state.pageKey,
+              child: const ShareKitScreen(),
+            ),
+          ),
+          GoRoute(
+            path: 'members',
+            pageBuilder: (context, state) => slidePage<void>(
+              key: state.pageKey,
+              child: const MembersScreen(),
+            ),
+          ),
+          GoRoute(
+            path: 'invites',
+            pageBuilder: (context, state) => slidePage<void>(
+              key: state.pageKey,
+              child: const InvitesScreen(),
+            ),
+          ),
+        ],
+      ),
+
+      GoRoute(
+        path: '${AppRoutes.invite}/:token',
+        pageBuilder: (context, state) {
+          final token = state.pathParameters['token'];
+
+          if (token == null || token.isEmpty) {
+            return fadeThroughPage<void>(
+              key: state.pageKey,
+              child: const JoinCommunityScreen(),
+            );
+          }
+
+          return fadeThroughPage<void>(
+            key: state.pageKey,
+            child: InviteScreen(token: token),
+          );
+        },
       ),
     ],
   );

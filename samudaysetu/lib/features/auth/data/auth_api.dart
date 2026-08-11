@@ -46,6 +46,16 @@ class AuthApi {
     return AppUser.fromJson(data);
   }
 
+  /// Updates the caller's own profile. Every field is optional; only what is
+  /// passed is sent, so a screen that edits the name cannot blank the rest.
+  Future<AppUser> updateProfile({String? fullName, String? preferredLanguage}) async {
+    final data = await _client.patch('/users/me', body: <String, String>{
+      if (fullName != null && fullName.trim().isNotEmpty) 'fullName': fullName.trim(),
+      if (preferredLanguage != null) 'preferredLanguage': preferredLanguage,
+    });
+    return AppUser.fromJson(data);
+  }
+
   Future<void> logout(String refreshToken) async {
     await _client.post('/auth/logout', body: <String, String>{
       'refreshToken': refreshToken,

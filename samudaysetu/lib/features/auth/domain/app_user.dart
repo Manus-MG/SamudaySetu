@@ -51,6 +51,7 @@ class AppUser {
     required this.role,
     required this.status,
     required this.isProfileComplete,
+    this.communityId,
     this.phone,
     this.email,
     this.fullName,
@@ -63,6 +64,7 @@ class AppUser {
         role: UserRole.fromWire(json['role'] as String?),
         status: UserStatus.fromWire(json['status'] as String?),
         isProfileComplete: json['isProfileComplete'] as bool? ?? false,
+        communityId: json['communityId'] as String?,
         phone: json['phone'] as String?,
         email: json['email'] as String?,
         fullName: json['fullName'] as String?,
@@ -74,11 +76,20 @@ class AppUser {
   final UserRole role;
   final UserStatus status;
   final bool isProfileComplete;
+
+  /// The community this member belongs to, or null if they have not joined one.
+  /// Drives the join prompt on the home screen.
+  final String? communityId;
+
   final String? phone;
   final String? email;
   final String? fullName;
   final String preferredLanguage;
   final DateTime? lastLoginAt;
+
+  /// True while the member still needs to join a community — the single most
+  /// important call to action for a brand-new account.
+  bool get needsCommunity => communityId == null && role == UserRole.user;
 
   /// What to greet the user with before they have given a name.
   String get displayName {

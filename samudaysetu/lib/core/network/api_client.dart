@@ -53,6 +53,10 @@ class ApiClient {
   Future<Map<String, dynamic>> patch(String path, {Object? body}) =>
       _send(() => _dio.patch<Map<String, dynamic>>(path, data: body));
 
+  /// For replacing a whole value, e.g. a community's join code.
+  Future<Map<String, dynamic>> put(String path, {Object? body}) =>
+      _send(() => _dio.put<Map<String, dynamic>>(path, data: body));
+
   Future<Map<String, dynamic>> delete(String path) =>
       _send(() => _dio.delete<Map<String, dynamic>>(path));
 

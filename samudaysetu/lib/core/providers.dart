@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/auth/data/auth_api.dart';
+import '../features/community/data/community_api.dart';
 import 'network/api_client.dart';
 import 'storage/app_preferences.dart';
 import 'storage/secure_storage.dart';
@@ -48,4 +49,8 @@ final apiClientProvider = Provider<ApiClient>((ref) {
 
 final authApiProvider = Provider<AuthApi>(
   (ref) => AuthApi(ref.watch(apiClientProvider)),
+);
+
+final communityApiProvider = Provider<CommunityApi>(
+  (ref) => CommunityApi(ref.watch(apiClientProvider)),
 );

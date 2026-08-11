@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import '../../../core/router/routes.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/entrance.dart';
 import '../../auth/application/session_controller.dart';
@@ -36,13 +38,162 @@ class HomeScreen extends ConsumerWidget {
           children: <Widget>[
             Entrance.staggered(index: 0, child: _Header(user: user)),
             const SizedBox(height: 28),
-            Entrance.staggered(index: 1, child: _AccountCard(user: user)),
+
+            // Placed above everything else, deliberately. For a member who has
+            // just signed up this is the only thing on the screen that matters,
+            // and burying it under an account summary is how people conclude the
+            // app "does not do anything".
+            if (user.needsCommunity) ...<Widget>[
+              Entrance.staggered(index: 1, child: const _JoinCommunityCard()),
+              const SizedBox(height: AppTheme.gutter),
+            ],
+
+            // Once they belong somewhere, the community is the thing they came
+            // back for — it goes above the account summary.
+            if (!user.needsCommunity) ...<Widget>[
+              Entrance.staggered(index: 2, child: const _NavRows()),
+              const SizedBox(height: AppTheme.gutter),
+            ],
+
+            Entrance.staggered(index: 3, child: _AccountCard(user: user)),
             const SizedBox(height: AppTheme.gutter),
-            Entrance.staggered(index: 2, child: const _ComingSoonCard()),
+            Entrance.staggered(index: 4, child: const _ComingSoonCard()),
             const SizedBox(height: 28),
-            Entrance.staggered(index: 3, child: const _SignOutButton()),
+            Entrance.staggered(index: 5, child: const _SignOutButton()),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Where a member goes from here.
+///
+/// Two rows rather than a bottom navigation bar: there are exactly two
+/// destinations, and a persistent bar for two items spends permanent screen
+/// height on a cheap phone to save one tap.
+class _NavRows extends StatelessWidget {
+  const _NavRows();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = ShadTheme.of(context);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.muted,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        children: <Widget>[
+          const _NavRow(
+            icon: LucideIcons.users,
+            label: 'मेरा समुदाय',
+            route: AppRoutes.myCommunity,
+          ),
+          Divider(height: 1, color: theme.colorScheme.border),
+          const _NavRow(
+            icon: LucideIcons.user,
+            label: 'मेरा खाता',
+            route: AppRoutes.profile,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NavRow extends StatelessWidget {
+  const _NavRow({required this.icon, required this.label, required this.route});
+
+  final IconData icon;
+  final String label;
+  final String route;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = ShadTheme.of(context);
+
+    return InkWell(
+      onTap: () => context.push(route),
+      borderRadius: BorderRadius.circular(14),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        child: Row(
+          children: <Widget>[
+            Icon(icon, size: 22, color: theme.colorScheme.foreground),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                label,
+                style: theme.textTheme.large.copyWith(
+                  height: AppTheme.devanagariLineHeight,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: theme.colorScheme.mutedForeground,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The call to action for a member who has not joined anything yet.
+///
+/// Written as an invitation rather than a warning: someone who just installed
+/// the app has done nothing wrong, and a red "action required" banner reads as
+/// an error to a user who is already unsure of themselves.
+class _JoinCommunityCard extends StatelessWidget {
+  const _JoinCommunityCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = ShadTheme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Icon(
+            LucideIcons.users,
+            size: 28,
+            color: theme.colorScheme.primaryForeground,
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'अपने समुदाय से जुड़ें',
+            style: theme.textTheme.h4.copyWith(
+              height: AppTheme.devanagariLineHeight,
+              color: theme.colorScheme.primaryForeground,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'नेता से मिला कोड डालें, या उनके भेजे लिंक को दबाएँ।',
+            style: theme.textTheme.p.copyWith(
+              height: AppTheme.devanagariLineHeight,
+              color: theme.colorScheme.primaryForeground.withValues(alpha: 0.85),
+            ),
+          ),
+          const SizedBox(height: 18),
+          SizedBox(
+            width: double.infinity,
+            height: AppTheme.minTapTarget,
+            child: ShadButton.secondary(
+              onPressed: () => context.push(AppRoutes.joinCommunity),
+              child: const Text('कोड डालें', style: TextStyle(fontSize: 16)),
+            ),
+          ),
+        ],
       ),
     );
   }

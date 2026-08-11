@@ -115,6 +115,26 @@ class SessionController extends Notifier<SessionState> {
     state = state.copyWith(status: SessionStatus.signedIn, user: result.user);
   }
 
+  /// Re-reads the signed-in user from the server.
+  ///
+  /// Needed after anything that changes the account itself rather than a screen's
+  /// data — joining or leaving a community moves `communityId`, and routing and
+  /// the home screen's prompt both key off it. Without this the app keeps telling
+  /// a member to join something they just joined.
+  ///
+  /// A failure here is deliberately swallowed: the action that prompted the
+  /// refresh already succeeded on the server, and tearing down the session
+  /// because a follow-up read timed out would be a far worse outcome than a
+  /// briefly stale name.
+  Future<void> refreshUser() async {
+    try {
+      final user = await _api.me();
+      state = state.copyWith(user: user);
+    } on Object {
+      // Stale is survivable; signed-out is not.
+    }
+  }
+
   Future<void> signOut() async {
     final refreshToken = await _storage.readRefreshToken();
 
