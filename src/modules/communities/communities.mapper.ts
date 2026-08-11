@@ -8,9 +8,12 @@ import type {
 import {
   buildDeepLink,
   buildJoinQrDataUrl,
+  buildJoinQrPngDataUrl,
   buildJoinUrl,
   buildShareMessage,
-  formatJoinCode,
+  buildWhatsAppShareUrl,
+  splitCodeWords,
+  toHindiCode,
 } from './joinCode.js';
 
 const toIso = (value: Date | null | undefined): string | null => value?.toISOString() ?? null;
@@ -45,7 +48,9 @@ export function toCommunityDto(doc: CommunityDocument): CommunityDto {
     status: doc.status,
 
     joinCode: doc.joinCode,
-    joinCodeFormatted: formatJoinCode(doc.joinCode),
+    joinCodeHindi: toHindiCode(doc.joinCode),
+    joinCodeWords: splitCodeWords(doc.joinCode),
+    joinCodeIsCustom: doc.joinCodeIsCustom,
     joinCodeUpdatedAt: doc.joinCodeUpdatedAt.toISOString(),
 
     leaderId: doc.leaderId?.toString() ?? null,
@@ -85,6 +90,11 @@ export function toCommunityPreviewDto(
     type: doc.type,
     location: toLocation(doc),
     isAcceptingMembers: isAcceptingMembers(doc),
+    joinCode: doc.joinCode,
+    joinCodeHindi: toHindiCode(doc.joinCode),
+    // A rough sense of scale reassures someone that they found the right place.
+    // Exact enough to be useful, and not private: the leader prints it on posters.
+    memberCount: doc.memberCount,
     unavailableReason,
   };
 }
@@ -100,10 +110,14 @@ export function toJoinKitDto(doc: CommunityDocument): JoinKitDto {
     communityId: doc._id.toString(),
     communityName: doc.name,
     joinCode: code,
-    joinCodeFormatted: formatJoinCode(code),
+    joinCodeHindi: toHindiCode(code),
+    joinCodeWords: splitCodeWords(code),
+    joinCodeIsCustom: doc.joinCodeIsCustom,
     joinUrl: buildJoinUrl(code),
     deepLink: buildDeepLink(code),
     qrDataUrl: buildJoinQrDataUrl(code, doc.name),
+    qrPngDataUrl: buildJoinQrPngDataUrl(code),
     shareMessage: buildShareMessage(doc.name, code),
+    whatsAppUrl: buildWhatsAppShareUrl(doc.name, code),
   };
 }

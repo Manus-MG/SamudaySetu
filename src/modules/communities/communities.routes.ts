@@ -3,14 +3,21 @@ import { createRateLimiter, requirePermission, validate } from '../../core/middl
 import { authenticate } from '../auth/auth.middleware.js';
 import { communitiesController } from './communities.controller.js';
 import {
+  acceptInviteSchema,
   assignLeaderSchema,
+  checkJoinCodeSchema,
   communityIdParamSchema,
   createCommunitySchema,
+  inviteIdParamSchema,
+  inviteTokenParamSchema,
   joinCodeParamSchema,
   joinCommunitySchema,
   listCommunitiesSchema,
+  listInvitesSchema,
   listMembersSchema,
   moderateCommunitySchema,
+  sendInviteSchema,
+  setJoinCodeSchema,
   updateCommunitySchema,
 } from './communities.schema.js';
 
@@ -58,6 +65,25 @@ communityRoutes.post(
 );
 
 communityRoutes.post('/leave', communitiesController.leave);
+
+/**
+ * Invite links. `preview` is rate limited alongside the code paths — the token is
+ * long enough that guessing is hopeless, but a cheap endpoint that hits the
+ * database on every call still deserves a bucket.
+ */
+communityRoutes.get(
+  '/invites/:token',
+  joinRateLimiter,
+  validate({ params: inviteTokenParamSchema }),
+  communitiesController.previewInvite,
+);
+
+communityRoutes.post(
+  '/invites/accept',
+  joinRateLimiter,
+  validate({ body: acceptInviteSchema }),
+  communitiesController.acceptInvite,
+);
 
 // ── Administration ───────────────────────────────────────────────────────────
 
@@ -154,4 +180,43 @@ communityRoutes.post(
   requirePermission('community:code:manage'),
   validate({ params: communityIdParamSchema }),
   communitiesController.rotateJoinCode,
+);
+
+// Called on every keystroke in the admin's code editor, so it is a GET with no
+// side effects and returns a reason rather than an error status.
+communityRoutes.get(
+  '/:id/join-code/check',
+  requirePermission('community:code:manage'),
+  validate({ params: communityIdParamSchema, query: checkJoinCodeSchema }),
+  communitiesController.checkJoinCode,
+);
+
+communityRoutes.put(
+  '/:id/join-code',
+  requirePermission('community:code:manage'),
+  validate({ params: communityIdParamSchema, body: setJoinCodeSchema }),
+  communitiesController.setJoinCode,
+);
+
+// ── Invites, from the leader's side ──────────────────────────────────────────
+
+communityRoutes.get(
+  '/:id/invites',
+  requirePermission('community:read'),
+  validate({ params: communityIdParamSchema, query: listInvitesSchema }),
+  communitiesController.listInvites,
+);
+
+communityRoutes.post(
+  '/:id/invites',
+  requirePermission('community:code:manage'),
+  validate({ params: communityIdParamSchema, body: sendInviteSchema }),
+  communitiesController.sendInvite,
+);
+
+communityRoutes.delete(
+  '/:id/invites/:inviteId',
+  requirePermission('community:code:manage'),
+  validate({ params: inviteIdParamSchema }),
+  communitiesController.revokeInvite,
 );

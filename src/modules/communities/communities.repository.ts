@@ -1,10 +1,22 @@
 import { Types, type FilterQuery, type UpdateQuery } from 'mongoose';
 import { JOIN_CODE_MAX_ATTEMPTS } from '../../config/index.js';
 import { CommunityModel, type CommunityDocument } from './communities.model.js';
-import { generateJoinCode } from './joinCode.js';
+import { generateJoinCode, normaliseJoinCode, toDisplayCode } from './joinCode.js';
 import { LIVE_COMMUNITY_STATUSES, type ListCommunitiesFilter } from './communities.types.js';
 
 type LeanCommunity = CommunityDocument | null;
+
+/** Everything `create` needs; the code fields are the repository's to mint. */
+export type CreateCommunityFields = Omit<
+  CommunityDocument,
+  | '_id'
+  | 'joinCode'
+  | 'joinCodeNormalised'
+  | 'joinCodeIsCustom'
+  | 'joinCodeUpdatedAt'
+  | 'createdAt'
+  | 'updatedAt'
+>;
 
 /** Escapes a user-supplied search term so it cannot inject regex metacharacters. */
 function escapeRegex(input: string): string {
@@ -25,7 +37,7 @@ function asDuplicateKeyError(error: unknown): MongoDuplicateKeyError | null {
 }
 
 export const isJoinCodeCollision = (error: unknown): boolean =>
-  asDuplicateKeyError(error)?.keyPattern?.['joinCode'] !== undefined;
+  asDuplicateKeyError(error)?.keyPattern?.['joinCodeNormalised'] !== undefined;
 
 export const isLeaderCollision = (error: unknown): boolean =>
   asDuplicateKeyError(error)?.keyPattern?.['leaderId'] !== undefined;
@@ -39,7 +51,13 @@ function buildListQuery(filter: ListCommunitiesFilter): FilterQuery<CommunityDoc
 
   if (filter.search) {
     const term = new RegExp(escapeRegex(filter.search), 'i');
-    query.$or = [{ name: term }, { joinCode: term }];
+    // Searching the normalised code as well means an operator can paste a code
+    // exactly as a member sent it — hyphens, spaces or neither — and find the row.
+    query.$or = [
+      { name: term },
+      { joinCode: term },
+      { joinCodeNormalised: new RegExp(escapeRegex(normaliseJoinCode(filter.search)), 'i') },
+    ];
   }
 
   return query;
@@ -56,17 +74,37 @@ export const communitiesRepository = {
   },
 
   /**
-   * Resolves a code to a live community. Archived and rejected communities are
-   * excluded here rather than filtered by the caller — a released code belongs to
-   * whoever holds it next, and this is the only lookup path.
+   * Resolves a code to a live community.
+   *
+   * Matches on the normalised form, so `suraj kamal`, `SURAJ-KAMAL` and
+   * `surajkamal` all land here. Archived and rejected communities are excluded
+   * here rather than by the caller — a released code belongs to whoever holds it
+   * next, and this is the only lookup path.
    */
-  findByJoinCode(joinCode: string): Promise<LeanCommunity> {
+  findByJoinCode(rawCode: string): Promise<LeanCommunity> {
     return CommunityModel.findOne({
-      joinCode,
+      joinCodeNormalised: normaliseJoinCode(rawCode),
       status: { $in: LIVE_COMMUNITY_STATUSES },
     })
       .lean<CommunityDocument>()
       .exec();
+  },
+
+  /**
+   * Whether a code is free, ignoring one community's own current code so that
+   * re-saving an unchanged code does not report itself as taken.
+   */
+  async isJoinCodeAvailable(rawCode: string, exceptCommunityId?: string): Promise<boolean> {
+    const existing = await CommunityModel.findOne({
+      joinCodeNormalised: normaliseJoinCode(rawCode),
+      status: { $in: LIVE_COMMUNITY_STATUSES },
+    })
+      .select('_id')
+      .lean<{ _id: Types.ObjectId }>()
+      .exec();
+
+    if (!existing) return true;
+    return exceptCommunityId !== undefined && existing._id.toString() === exceptCommunityId;
   },
 
   /** The community currently occupying this leader's single slot, if any. */
@@ -85,15 +123,18 @@ export const communitiesRepository = {
    * already has a community, which is a business rule the caller must surface.
    */
   async create(
-    input: Omit<CommunityDocument, '_id' | 'joinCode' | 'joinCodeUpdatedAt' | 'createdAt' | 'updatedAt'>,
+    input: CreateCommunityFields,
   ): Promise<CommunityDocument> {
     let lastError: unknown;
 
     for (let attempt = 0; attempt < JOIN_CODE_MAX_ATTEMPTS; attempt++) {
+      const code = generateJoinCode();
       try {
         const created = await CommunityModel.create({
           ...input,
-          joinCode: generateJoinCode(),
+          joinCode: code,
+          joinCodeNormalised: normaliseJoinCode(code),
+          joinCodeIsCustom: false,
           joinCodeUpdatedAt: new Date(),
         });
         return created.toObject<CommunityDocument>();
@@ -106,14 +147,22 @@ export const communitiesRepository = {
     throw lastError;
   },
 
-  /** Issues a new code, retrying past collisions. Returns the updated document. */
+  /**
+   * Issues a fresh generated code, retrying past collisions.
+   *
+   * The word-pair space is ~40,000, so unlike a random-character code this can
+   * genuinely collide; the retry is doing real work, not guarding a formality.
+   */
   async rotateJoinCode(id: string): Promise<LeanCommunity> {
     let lastError: unknown;
 
     for (let attempt = 0; attempt < JOIN_CODE_MAX_ATTEMPTS; attempt++) {
+      const code = generateJoinCode();
       try {
         return await this.updateById(id, {
-          joinCode: generateJoinCode(),
+          joinCode: code,
+          joinCodeNormalised: normaliseJoinCode(code),
+          joinCodeIsCustom: false,
           joinCodeUpdatedAt: new Date(),
         });
       } catch (error) {
@@ -123,6 +172,19 @@ export const communitiesRepository = {
     }
 
     throw lastError;
+  },
+
+  /**
+   * Sets a leader-chosen code. No retry: a taken custom code is a decision the
+   * user has to make again, not something to paper over with another attempt.
+   */
+  setCustomJoinCode(id: string, displayCode: string): Promise<LeanCommunity> {
+    return this.updateById(id, {
+      joinCode: toDisplayCode(displayCode),
+      joinCodeNormalised: normaliseJoinCode(displayCode),
+      joinCodeIsCustom: true,
+      joinCodeUpdatedAt: new Date(),
+    });
   },
 
   updateById(id: string, update: UpdateQuery<CommunityDocument>): Promise<LeanCommunity> {

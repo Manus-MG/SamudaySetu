@@ -13,17 +13,29 @@ import {
   toJoinKitDto,
 } from './communities.mapper.js';
 import type { CommunityDocument } from './communities.model.js';
-import { communitiesRepository, isLeaderCollision } from './communities.repository.js';
+import {
+  communitiesRepository,
+  isJoinCodeCollision,
+  isLeaderCollision,
+} from './communities.repository.js';
+import { invitesService } from './invites/invite.service.js';
+import type { InviteDto, InvitePreviewDto, SentInviteDto } from './invites/invite.types.js';
 import type {
   CommunityDto,
   CommunityPreviewDto,
   CommunityStatus,
   CreateCommunityInput,
+  JoinCodeAvailabilityDto,
   JoinKitDto,
   ListCommunitiesFilter,
   UpdateCommunityInput,
 } from './communities.types.js';
-import { normaliseJoinCode } from './joinCode.js';
+import {
+  CUSTOM_CODE_MESSAGES,
+  checkCustomJoinCode,
+  toDisplayCode,
+  toHindiCode,
+} from './joinCode.js';
 
 /** The staff-side moderation verbs, as they arrive from the API. */
 export type ModerationAction = 'APPROVE' | 'REJECT' | 'SUSPEND' | 'REACTIVATE';
@@ -467,6 +479,106 @@ export const communitiesService = {
     return toJoinKitDto(community);
   },
 
+  /**
+   * Whether a proposed custom code is usable. Backs the admin UI's live check as
+   * the leader types, so they learn a name is taken before they commit to it —
+   * not after they have printed it.
+   */
+  async checkJoinCode(
+    actor: Principal,
+    id: string,
+    candidate: string,
+  ): Promise<JoinCodeAvailabilityDto> {
+    const community = await getOrThrow(id);
+    assertMayManage(actor, community);
+
+    const check = checkCustomJoinCode(candidate);
+    if (!check.ok) {
+      const message = CUSTOM_CODE_MESSAGES[check.problem ?? 'INVALID_CHARACTERS'];
+      return {
+        code: toDisplayCode(candidate),
+        codeHindi: null,
+        available: false,
+        reason: message.en,
+        reasonHi: message.hi,
+      };
+    }
+
+    const display = check.display ?? '';
+    const free = await communitiesRepository.isJoinCodeAvailable(display, id);
+
+    return {
+      code: display,
+      codeHindi: toHindiCode(display),
+      available: free,
+      reason: free ? null : 'Another community is already using this code',
+      reasonHi: free ? null : 'यह कोड पहले से किसी अन्य समुदाय के पास है',
+    };
+  },
+
+  /**
+   * Replaces the code with one the leader chose.
+   *
+   * The point is recognisability: `GUPTASAMAJ` is something a member already
+   * knows, so it survives being heard once on a phone call in a way no generated
+   * string does. The old code stops working immediately, same as a rotation.
+   */
+  async setCustomJoinCode(
+    actor: Principal,
+    id: string,
+    candidate: string,
+    ip?: string,
+  ): Promise<JoinKitDto> {
+    const community = await getOrThrow(id);
+    assertMayManage(actor, community);
+
+    const check = checkCustomJoinCode(candidate);
+    if (!check.ok) {
+      const message = CUSTOM_CODE_MESSAGES[check.problem ?? 'INVALID_CHARACTERS'];
+      throw AppError.badRequest(message.en, {
+        messageHi: message.hi,
+        details: { problem: check.problem },
+      });
+    }
+
+    const display = check.display ?? '';
+
+    // Checked before the write for a clean message, and again by the unique index
+    // underneath — this read cannot be atomic, so it is a courtesy, not a guard.
+    if (!(await communitiesRepository.isJoinCodeAvailable(display, id))) {
+      throw AppError.conflict('Another community is already using this code', {
+        messageHi: 'यह कोड पहले से किसी अन्य समुदाय के पास है।',
+      });
+    }
+
+    let updated: CommunityDocument | null;
+    try {
+      updated = await communitiesRepository.setCustomJoinCode(id, display);
+    } catch (error) {
+      if (isJoinCodeCollision(error)) {
+        throw AppError.conflict('Another community just claimed this code', {
+          messageHi: 'यह कोड अभी-अभी किसी अन्य समुदाय ने ले लिया।',
+        });
+      }
+      throw error;
+    }
+    if (!updated) throw AppError.notFound('Community not found');
+
+    void auditService.record({
+      actorId: actor.userId,
+      actorRole: actor.role,
+      action: 'COMMUNITY_JOIN_CODE_CUSTOMISED',
+      resourceType: 'COMMUNITY',
+      resourceId: id,
+      communityId: id,
+      // The code itself stays out of the trail, as with rotation.
+      summary: `Set a custom join code for "${updated.name}"`,
+      ip: ip ?? null,
+    });
+
+    return toJoinKitDto(updated);
+  },
+
   /** The QR on its own, as a downloadable/printable SVG document. */
   async getJoinQrSvg(actor: Principal, id: string): Promise<{ svg: string; name: string }> {
     const community = await getOrThrow(id);
@@ -490,6 +602,9 @@ export const communitiesService = {
     }
 
     const released = await usersService.detachAllFromCommunity(id);
+    // Outstanding invite links must die with the community, or a member taps one
+    // next week and lands nowhere.
+    const revokedInvites = await invitesService.revokeAllForCommunity(id);
 
     const updated = await communitiesRepository.updateById(id, {
       status: 'ARCHIVED',
@@ -507,7 +622,11 @@ export const communitiesService = {
       resourceId: id,
       communityId: id,
       summary: `Archived community "${updated.name}" and released ${String(released)} member(s)`,
-      metadata: { releasedMembers: released, previousStatus: community.status },
+      metadata: {
+        releasedMembers: released,
+        revokedInvites,
+        previousStatus: community.status,
+      },
       ip: ip ?? null,
     });
 
@@ -524,8 +643,9 @@ export const communitiesService = {
    * "wrong code" and send the user back to retype something that was correct.
    */
   async previewByCode(rawCode: string): Promise<CommunityPreviewDto> {
-    const code = normaliseJoinCode(rawCode);
-    const community = await communitiesRepository.findByJoinCode(code);
+    // Normalisation lives in the repository so there is exactly one definition of
+    // "the same code"; doing it here too would be two copies free to drift.
+    const community = await communitiesRepository.findByJoinCode(rawCode);
 
     if (!community) {
       throw AppError.notFound('No community found for this code', {
@@ -558,8 +678,7 @@ export const communitiesService = {
       });
     }
 
-    const code = normaliseJoinCode(rawCode);
-    const community = await communitiesRepository.findByJoinCode(code);
+    const community = await communitiesRepository.findByJoinCode(rawCode);
 
     if (!community) {
       throw AppError.notFound('No community found for this code', {
@@ -606,6 +725,105 @@ export const communitiesService = {
     });
 
     // Re-read so the caller gets the post-join member count rather than a stale one.
+    const refreshed = await communitiesRepository.findById(communityId);
+    return toCommunityDto(refreshed ?? community);
+  },
+
+  // ── Invites ────────────────────────────────────────────────────────────────
+  //
+  // The invites service owns tokens and SMS; this layer owns *authorisation* and
+  // the membership write. Keeping the split means an invite can never attach a
+  // member without going through the same counter and audit path as a code join.
+
+  async sendInvite(
+    actor: Principal,
+    id: string,
+    phone: string,
+    ip?: string,
+  ): Promise<SentInviteDto> {
+    const community = await getOrThrow(id);
+    assertMayManage(actor, community);
+    return invitesService.send(actor, community, phone, ip);
+  },
+
+  async listInvites(
+    actor: Principal,
+    id: string,
+    filter: { status?: InviteDto['status']; page: number; pageSize: number },
+  ): Promise<Paginated<InviteDto>> {
+    const community = await getOrThrow(id);
+    assertMayManage(actor, community);
+    return invitesService.list(community, filter);
+  },
+
+  async revokeInvite(
+    actor: Principal,
+    id: string,
+    inviteId: string,
+    ip?: string,
+  ): Promise<InviteDto> {
+    const community = await getOrThrow(id);
+    assertMayManage(actor, community);
+    return invitesService.revoke(actor, community, inviteId, ip);
+  },
+
+  /** "You have been invited to X" — resolved from the link, before signing in matters. */
+  previewInvite(token: string): Promise<InvitePreviewDto> {
+    return invitesService.preview(token, (communityId) =>
+      communitiesRepository.findById(communityId),
+    );
+  },
+
+  /**
+   * Joins via an invite link.
+   *
+   * Unlike a code join this ignores `isJoinable`: closing recruitment stops
+   * *strangers with a code* getting in, but an invite is a leader deliberately
+   * naming one person. Overriding the switch here is the whole point of the
+   * feature — a community can shut the public door and still admit people.
+   */
+  async joinByInvite(actor: Principal, token: string, ip?: string): Promise<CommunityDto> {
+    if (actor.role !== 'USER') {
+      throw AppError.forbidden('Staff and leader accounts cannot join a community as members', {
+        messageHi: 'स्टाफ़ और नेता खाते सदस्य के रूप में शामिल नहीं हो सकते।',
+      });
+    }
+
+    // Consume first: the token is single-use, and a failure after this point
+    // leaves a burnt invite rather than a reusable one. That is the safe
+    // direction — the alternative lets one link admit two people.
+    const communityId = await invitesService.consume(token, actor.userId);
+    const community = await getOrThrow(communityId);
+
+    if (community.status !== 'ACTIVE') {
+      throw AppError.conflict('This community is not active right now', {
+        messageHi: 'यह समुदाय अभी सक्रिय नहीं है।',
+      });
+    }
+
+    const attached = await usersService.attachToCommunity(actor.userId, communityId);
+    if (!attached) {
+      const user = await usersService.getById(actor.userId);
+      if (user.communityId === communityId) return toCommunityDto(community);
+
+      throw AppError.conflict('You are already a member of another community', {
+        messageHi: 'आप पहले से किसी अन्य समुदाय के सदस्य हैं।',
+      });
+    }
+
+    await communitiesRepository.adjustMemberCount(communityId, 1);
+
+    void auditService.record({
+      actorId: actor.userId,
+      actorRole: actor.role,
+      action: 'COMMUNITY_INVITE_ACCEPTED',
+      resourceType: 'USER',
+      resourceId: actor.userId,
+      communityId,
+      summary: `Joined "${community.name}" through an invite`,
+      ip: ip ?? null,
+    });
+
     const refreshed = await communitiesRepository.findById(communityId);
     return toCommunityDto(refreshed ?? community);
   },

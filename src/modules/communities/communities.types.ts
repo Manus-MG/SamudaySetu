@@ -68,10 +68,14 @@ export interface CommunityDto {
   type: CommunityType;
   status: CommunityStatus;
 
-  /** Canonical, ungrouped. Pair with `joinCodeFormatted` for display. */
+  /** Display form with word boundaries: `SURAJ-KAMAL`. */
   joinCode: string;
-  /** `K7M2-QX9B` — the form printed on posters and read aloud on a call. */
-  joinCodeFormatted: string;
+  /** `सूरज-कमल`, or `null` for a custom code we cannot transliterate safely. */
+  joinCodeHindi: string | null;
+  /** The words on their own, for a UI that shows them one per line. */
+  joinCodeWords: string[];
+  /** True when the leader chose it rather than the wordlist generating it. */
+  joinCodeIsCustom: boolean;
   joinCodeUpdatedAt: string;
 
   leaderId: string | null;
@@ -108,6 +112,12 @@ export interface CommunityPreviewDto {
   type: CommunityType;
   location: CommunityLocation;
   isAcceptingMembers: boolean;
+  /** Echoed back so the confirm screen shows the canonical code, not the typo-ish
+   *  thing the member typed. Seeing `SURAJ-KAMAL` after typing `surajkamal` is
+   *  what tells them the app understood. */
+  joinCode: string;
+  joinCodeHindi: string | null;
+  memberCount: number;
   /** Why joining is unavailable, when it is. `null` when the community is open. */
   unavailableReason: 'NOT_FOUND' | 'NOT_APPROVED' | 'SUSPENDED' | 'CLOSED' | null;
 }
@@ -117,15 +127,32 @@ export interface JoinKitDto {
   communityId: string;
   communityName: string;
   joinCode: string;
-  joinCodeFormatted: string;
+  joinCodeHindi: string | null;
+  joinCodeWords: string[];
+  joinCodeIsCustom: boolean;
   /** Universal link. Opens the app if installed, the web page otherwise. */
   joinUrl: string;
   /** Custom-scheme fallback for platforms where universal links are unreliable. */
   deepLink: string;
-  /** SVG data URL of `joinUrl`, ready for `<img src>`. */
+  /** SVG data URL of `joinUrl`. Sharp at any size — used by the web console. */
   qrDataUrl: string;
+  /** PNG data URL of the same QR, for the Flutter app's `Image.memory`. */
+  qrPngDataUrl: string;
   /** Pre-written share text in Hindi, the app's default locale. */
   shareMessage: string;
+  /** `wa.me` link that opens WhatsApp with `shareMessage` already composed. */
+  whatsAppUrl: string;
+}
+
+/** Answer to "can we use this code?", for the admin UI's live check. */
+export interface JoinCodeAvailabilityDto {
+  /** The display form the server would store, so the UI can show it back. */
+  code: string;
+  codeHindi: string | null;
+  available: boolean;
+  /** `null` when available; otherwise why not, in both languages. */
+  reason: string | null;
+  reasonHi: string | null;
 }
 
 export interface CreateCommunityInput {
