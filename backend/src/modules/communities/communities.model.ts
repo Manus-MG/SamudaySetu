@@ -1,5 +1,5 @@
 import { Schema, model, type Model, type Types } from 'mongoose';
-import { COLLECTIONS, JOIN_CODE_LENGTH } from '../../config/index.js';
+import { COLLECTIONS, JOIN_CODE_MAX_LENGTH, JOIN_CODE_MIN_LENGTH } from '../../config/index.js';
 import {
   COMMUNITY_STATUSES,
   COMMUNITY_TYPES,
@@ -14,8 +14,15 @@ export interface CommunityDocument {
   type: CommunityType;
   status: CommunityStatus;
 
-  /** Canonical uppercase code. Unique across every non-archived community. */
+  /** Display form, with the leader's word boundaries: `SURAJ-KAMAL`. */
   joinCode: string;
+  /**
+   * Lookup key: `joinCode` with every separator removed. Uniqueness and every
+   * read go through this, so a member who omits the hyphen still gets in.
+   */
+  joinCodeNormalised: string;
+  /** True when a leader chose it, false when it was generated from the wordlist. */
+  joinCodeIsCustom: boolean;
   joinCodeUpdatedAt: Date;
 
   leaderId: Types.ObjectId | null;
@@ -68,9 +75,19 @@ const communitySchema = new Schema<CommunityDocument>(
       required: true,
       uppercase: true,
       trim: true,
-      minlength: JOIN_CODE_LENGTH,
-      maxlength: JOIN_CODE_LENGTH,
+      // The display form carries hyphens, so its ceiling allows for them on top
+      // of the normalised limit.
+      maxlength: JOIN_CODE_MAX_LENGTH + 8,
     },
+    joinCodeNormalised: {
+      type: String,
+      required: true,
+      uppercase: true,
+      trim: true,
+      minlength: JOIN_CODE_MIN_LENGTH,
+      maxlength: JOIN_CODE_MAX_LENGTH,
+    },
+    joinCodeIsCustom: { type: Boolean, required: true, default: false },
     joinCodeUpdatedAt: { type: Date, required: true, default: () => new Date() },
 
     // Nullable: an admin may create a community before deciding who runs it.
@@ -93,13 +110,22 @@ const communitySchema = new Schema<CommunityDocument>(
 /**
  * Join codes are unique among communities that can still be resolved.
  *
- * Partial rather than plain: archiving a community releases its code back into
- * the pool, and a plain unique index would keep dead communities squatting on
- * memorable codes forever. The lookup path filters on the same statuses, so a
- * code can never resolve to two rows.
+ * On the **normalised** form, not the display form, and that is the load-bearing
+ * detail. Lookup ignores separators, so `SURAJ-KAMAL` and `SURAJKAMAL` are the
+ * same code to a member typing it in; indexing the display form would let both
+ * exist and a query would then have two right answers.
+ *
+ * It also collapses the one genuinely ambiguous case: `SUR-AJGAR` and
+ * `SURAJ-GAR` normalise identically, so only whichever was created first can
+ * exist. A member who meant the other one sees the wrong community *name* on the
+ * confirmation screen and backs out — which is exactly why that screen exists.
+ *
+ * Partial rather than plain: archiving releases the code back into the pool, and
+ * a plain unique index would let dead communities squat on memorable words
+ * forever. The lookup path filters on the same statuses.
  */
 communitySchema.index(
-  { joinCode: 1 },
+  { joinCodeNormalised: 1 },
   {
     unique: true,
     partialFilterExpression: { status: { $in: ['PENDING_APPROVAL', 'ACTIVE', 'SUSPENDED'] } },
