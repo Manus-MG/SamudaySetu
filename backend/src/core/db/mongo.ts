@@ -13,7 +13,6 @@ const READY_STATE: Readonly<Record<number, MongoStatus>> = Object.freeze({
 });
 
 mongoose.set('strictQuery', true);
-mongoose.set('sanitizeFilter', true);
 
 let listenersBound = false;
 

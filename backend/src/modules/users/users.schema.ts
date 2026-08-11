@@ -29,15 +29,29 @@ export const listUsersSchema = paginationSchema.extend({
   search: z.string().trim().min(1).max(80).optional(),
 });
 
-/** Staff accounts only. Members are created implicitly by OTP verification. */
-export const createStaffUserSchema = z.object({
-  email: emailSchema,
-  password: passwordSchema,
-  fullName: fullNameSchema,
-  role: z.enum(ROLES),
-  phone: phoneSchema.optional(),
-  preferredLanguage: languageSchema.optional(),
-});
+/**
+ * Staff accounts only. Members are created implicitly by OTP verification.
+ *
+ * A phone number is mandatory for `LEADER` and optional for everyone else, and
+ * the asymmetry is not arbitrary: leaders work in the **mobile app**, which has
+ * no password login at all — they sign in by phone and OTP like any member. A
+ * leader created with only an email would have a working account and no way to
+ * reach it. Admins and super admins sign in to the web console with the email and
+ * password below, so their phone is genuinely optional.
+ */
+export const createStaffUserSchema = z
+  .object({
+    email: emailSchema,
+    password: passwordSchema,
+    fullName: fullNameSchema,
+    role: z.enum(ROLES),
+    phone: phoneSchema.optional(),
+    preferredLanguage: languageSchema.optional(),
+  })
+  .refine((value) => value.role !== 'LEADER' || value.phone !== undefined, {
+    message: 'A leader signs in to the mobile app by phone, so a phone number is required',
+    path: ['phone'],
+  });
 
 export const assignRoleSchema = z.object({ role: z.enum(ROLES) });
 

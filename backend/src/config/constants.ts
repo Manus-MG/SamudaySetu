@@ -37,33 +37,68 @@ export const COLLECTIONS = Object.freeze({
   OTP_CHALLENGES: 'otp_challenges',
   REFRESH_TOKENS: 'refresh_tokens',
   COMMUNITIES: 'communities',
+  COMMUNITY_INVITES: 'community_invites',
   AUDIT_LOGS: 'audit_logs',
 });
 
+/** How long a phone invite link stays valid. Long enough to survive a weekend. */
+export const INVITE_TTL_DAYS = 14;
+
+/** Per-community cap on invites sent per hour. Every SMS costs real money. */
+export const INVITE_MAX_PER_COMMUNITY_PER_HOUR = 60;
+
 /**
- * Join-code alphabet.
+ * Join-code bounds, applied to the normalised form (letters and digits only).
  *
- * Built by elimination, because this code gets read off a photographed poster and
- * dictated over a phone call:
- *   - no vowels, so a code can never accidentally spell a word;
- *   - of each lookalike group only one survives — `0/O/Q`, `1/I/L`, `2/Z`, `5/S`,
- *     `6/G`, `7/T`, `8/B`, `U/V`.
- * What is left is 22 characters that cannot be confused with one another.
+ * The floor is 4 so a code cannot be guessed in a handful of tries; the ceiling
+ * is 24 because past that nobody reads it out correctly, and it stops fitting on
+ * a poster in type large enough to matter.
  */
-export const JOIN_CODE_ALPHABET = '23456789CDFHJKMNPRVWXY';
-
-/** 22^8 ≈ 5.5e10 codes — collisions are a non-event, and it fits on one line. */
-export const JOIN_CODE_LENGTH = 8;
-
-/** Codes are shown grouped for readability: `K7M2-QX9B`. Storage stays ungrouped. */
-export const JOIN_CODE_GROUP_SIZE = 4;
+export const JOIN_CODE_MIN_LENGTH = 4;
+export const JOIN_CODE_MAX_LENGTH = 24;
 
 /**
- * Attempts to find an unused code before giving up. With this alphabet the first
- * attempt effectively always wins; the retry exists only so a genuine unique-index
- * collision surfaces as a clean 409 rather than a 500.
+ * Codes a community may not claim.
+ *
+ * Two reasons, both practical: these words appear in the join URL path, so one of
+ * them as a code invites confusion with a real route; and a community holding
+ * `SUPPORT` or `ADMIN` can impersonate the platform to its own members.
  */
-export const JOIN_CODE_MAX_ATTEMPTS = 5;
+export const JOIN_CODE_RESERVED: readonly string[] = Object.freeze([
+  'ADMIN',
+  'ADMINISTRATOR',
+  'API',
+  'APP',
+  'AUTH',
+  'COMMUNITY',
+  'HELP',
+  'HOME',
+  'INVITE',
+  'JOIN',
+  'LOGIN',
+  'LOGOUT',
+  'NULL',
+  'OTP',
+  'ROOT',
+  'SAMUDAY',
+  'SAMUDAYSETU',
+  'SETTINGS',
+  'SIGNIN',
+  'SIGNUP',
+  'SUPERADMIN',
+  'SUPPORT',
+  'SYSTEM',
+  'TEST',
+  'UNDEFINED',
+  'USER',
+]);
+
+/**
+ * Attempts to find an unused generated code before giving up. The word-pair space
+ * is ~40,000, so a collision is possible in a way it never was with random
+ * characters — this is a real retry, not a formality.
+ */
+export const JOIN_CODE_MAX_ATTEMPTS = 8;
 
 /** A leader may hold exactly one community. Admins and super admins are unbounded. */
 export const MAX_COMMUNITIES_PER_LEADER = 1;

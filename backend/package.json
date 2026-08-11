@@ -14,7 +14,8 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "test": "vitest run",
     "test:watch": "vitest",
-    "create:superadmin": "tsx src/scripts/createSuperAdmin.ts"
+    "create:superadmin": "tsx src/scripts/createSuperAdmin.ts",
+    "migrate:joincodes": "tsx src/scripts/migrateJoinCodes.ts"
   },
   "dependencies": {
     "compression": "^1.7.5",
