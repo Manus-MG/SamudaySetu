@@ -665,6 +665,13 @@ function CreateStaffDialog({
       return;
     }
 
+    // Leaders work in the mobile app, which has no password login — without a
+    // phone they would have a working account and no way to reach it.
+    if (role === 'LEADER' && phone.trim().length === 0) {
+      setError('A leader signs in to the mobile app by phone, so a phone number is required.');
+      return;
+    }
+
     mutation.mutate({
       email: email.trim(),
       fullName: fullName.trim(),
@@ -753,12 +760,16 @@ function CreateStaffDialog({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <label htmlFor="new-phone" className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                  Phone <span className="text-zinc-400">(optional)</span>
+                  Phone{' '}
+                  <span className={role === 'LEADER' ? 'text-amber-600' : 'text-zinc-400'}>
+                    {role === 'LEADER' ? '(required)' : '(optional)'}
+                  </span>
                 </label>
                 <Input
                   id="new-phone"
                   inputMode="tel"
                   placeholder="9876543210"
+                  required={role === 'LEADER'}
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                 />
@@ -777,6 +788,13 @@ function CreateStaffDialog({
                 </Select>
               </div>
             </div>
+
+            {role === 'LEADER' && (
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                Leaders sign in to the mobile app with this phone number and an OTP. The password
+                below only exists so the account can be upgraded to Admin later.
+              </p>
+            )}
 
             <div className="space-y-1">
               <div className="flex items-center justify-between">

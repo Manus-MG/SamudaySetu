@@ -5,6 +5,7 @@ import {
   SquaresFour,
   Pulse,
   UsersThree,
+  Buildings,
   ShieldCheckered,
   SignOut,
   ShieldCheck,
@@ -30,8 +31,9 @@ interface NavItem {
 const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Overview', path: '/', icon: SquaresFour },
   { label: 'System Health', path: '/health', icon: Pulse },
+  { label: 'Communities', path: '/communities', icon: Buildings },
   { label: 'Staff & Roles', path: '/users', icon: UsersThree },
-  { label: 'Audit Log', path: '/audit', icon: ShieldCheckered, disabled: true },
+  { label: 'Audit Log', path: '/audit', icon: ShieldCheckered },
 ];
 
 const NAV_BASE =

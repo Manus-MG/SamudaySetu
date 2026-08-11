@@ -158,8 +158,12 @@ export interface CommunityDto {
   description: string | null;
   type: CommunityType;
   status: CommunityStatus;
+  /** Display form with word boundaries: `SURAJ-KAMAL`. */
   joinCode: string;
-  joinCodeFormatted: string;
+  /** `सूरज-कमल`, or `null` when the code is custom. */
+  joinCodeHindi: string | null;
+  joinCodeWords: string[];
+  joinCodeIsCustom: boolean;
   joinCodeUpdatedAt: string;
   leaderId: string | null;
   createdBy: string;
@@ -181,12 +185,60 @@ export interface JoinKitDto {
   communityId: string;
   communityName: string;
   joinCode: string;
-  joinCodeFormatted: string;
+  joinCodeHindi: string | null;
+  joinCodeWords: string[];
+  joinCodeIsCustom: boolean;
   joinUrl: string;
   deepLink: string;
   /** SVG data URL, ready for `<img src>`. */
   qrDataUrl: string;
   shareMessage: string;
+  /** `wa.me` link that opens WhatsApp with `shareMessage` already composed. */
+  whatsAppUrl: string;
+}
+
+/** Answer to "can we use this code?" — drives the live check in the code editor. */
+export interface JoinCodeAvailabilityDto {
+  code: string;
+  codeHindi: string | null;
+  available: boolean;
+  reason: string | null;
+  reasonHi: string | null;
+}
+
+// ── Invites (backend/src/modules/communities/invites) ────────────────────────
+
+export const INVITE_STATUSES = ['SENT', 'ACCEPTED', 'REVOKED'] as const;
+export type InviteStatus = (typeof INVITE_STATUSES)[number];
+
+export const INVITE_STATUS_LABELS: Readonly<Record<InviteStatus, string>> = Object.freeze({
+  SENT: 'Waiting',
+  ACCEPTED: 'Joined',
+  REVOKED: 'Cancelled',
+});
+
+export interface InviteDto {
+  id: string;
+  communityId: string;
+  communityName: string;
+  /** Masked by the server; the full number never reaches the browser. */
+  phoneMasked: string;
+  status: InviteStatus;
+  isUsable: boolean;
+  smsDelivered: boolean;
+  invitedBy: string;
+  acceptedBy: string | null;
+  acceptedAt: string | null;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface SentInviteDto {
+  invite: InviteDto;
+  /** Returned in the clear because no SMS provider is connected yet. */
+  inviteUrl: string;
+  whatsAppUrl: string;
+  smsDelivered: boolean;
 }
 
 // ── Audit (backend/src/modules/audit/audit.types.ts) ─────────────────────────
@@ -337,6 +389,12 @@ export interface UpdateCommunityPayload {
   contactEmail?: string | null;
   contactPhone?: string | null;
   isJoinable?: boolean;
+}
+
+export interface ListInvitesParams {
+  status?: InviteStatus;
+  page?: number;
+  pageSize?: number;
 }
 
 export interface ListMembersParams {

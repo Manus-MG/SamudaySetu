@@ -240,7 +240,7 @@ export function CommunityDetailPage(): React.JSX.Element {
           <CardContent className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
             <Detail label="Join code">
               <span className="font-mono tracking-wider">
-                {isClosed ? '—' : community.joinCodeFormatted}
+                {isClosed ? '—' : community.joinCode}
               </span>
             </Detail>
             <Detail label="Members">

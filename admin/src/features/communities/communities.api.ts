@@ -2,11 +2,15 @@ import { api } from '../../api/client.ts';
 import type {
   CommunityDto,
   CreateCommunityPayload,
+  InviteDto,
+  JoinCodeAvailabilityDto,
   JoinKitDto,
   ListCommunitiesParams,
+  ListInvitesParams,
   ListMembersParams,
   ModerationAction,
   Paginated,
+  SentInviteDto,
   UpdateCommunityPayload,
   UserDto,
 } from '../../api/types.ts';
@@ -20,6 +24,9 @@ export const communityKeys = {
   list: (params: ListCommunitiesParams) => ['communities', 'list', params] as const,
   detail: (id: string) => ['communities', 'detail', id] as const,
   joinKit: (id: string) => ['communities', 'joinKit', id] as const,
+  codeCheck: (id: string, code: string) => ['communities', 'codeCheck', id, code] as const,
+  invites: (id: string, params: ListInvitesParams) =>
+    ['communities', 'invites', id, params] as const,
   members: (id: string, params: ListMembersParams) =>
     ['communities', 'members', id, params] as const,
 };
@@ -54,9 +61,26 @@ export const communitiesApi = {
 
   joinKit: (id: string): Promise<JoinKitDto> => api.get<JoinKitDto>(`/communities/${id}/join-kit`),
 
-  /** Invalidates the old code immediately. Returns the new kit. */
+  /** Issues a fresh two-word code. Invalidates the old one immediately. */
   rotateJoinCode: (id: string): Promise<JoinKitDto> =>
     api.post<JoinKitDto>(`/communities/${id}/join-code/rotate`),
+
+  /** Live availability check. A GET with no side effects — safe to call per keystroke. */
+  checkJoinCode: (id: string, code: string): Promise<JoinCodeAvailabilityDto> =>
+    api.get<JoinCodeAvailabilityDto>(`/communities/${id}/join-code/check`, { code }),
+
+  setJoinCode: (id: string, code: string): Promise<JoinKitDto> =>
+    api.put<JoinKitDto>(`/communities/${id}/join-code`, { code }),
+
+  // ── Invites ────────────────────────────────────────────────────────────────
+  listInvites: (id: string, params: ListInvitesParams): Promise<Paginated<InviteDto>> =>
+    api.get<Paginated<InviteDto>>(`/communities/${id}/invites`, { ...params }),
+
+  sendInvite: (id: string, phone: string): Promise<SentInviteDto> =>
+    api.post<SentInviteDto>(`/communities/${id}/invites`, { phone }),
+
+  revokeInvite: (id: string, inviteId: string): Promise<InviteDto> =>
+    api.delete<InviteDto>(`/communities/${id}/invites/${inviteId}`),
 
   members: (id: string, params: ListMembersParams): Promise<Paginated<UserDto>> =>
     api.get<Paginated<UserDto>>(`/communities/${id}/members`, { ...params }),

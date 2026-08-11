@@ -8,6 +8,8 @@ import { LoginPage } from '../features/auth/LoginPage.tsx';
 import { DashboardPage } from '../features/dashboard/DashboardPage.tsx';
 import { SystemHealthPage } from '../features/health/SystemHealthPage.tsx';
 import { StaffUsersPage } from '../features/users/StaffUsersPage.tsx';
+import { CommunitiesPage } from '../features/communities/CommunitiesPage.tsx';
+import { CommunityDetailPage } from '../features/communities/CommunityDetailPage.tsx';
 import { AuditLogsPage } from '../features/audit/AuditLogsPage.tsx';
 import { NotFoundPage } from '../features/errors/NotFoundPage.tsx';
 
@@ -56,6 +58,8 @@ export const router = createBrowserRouter([
           { path: '/', element: <DashboardPage /> },
           { path: '/health', element: <SystemHealthPage /> },
           { path: '/users', element: <StaffUsersPage /> },
+          { path: '/communities', element: <CommunitiesPage /> },
+          { path: '/communities/:id', element: <CommunityDetailPage /> },
           { path: '/audit', element: <AuditLogsPage /> },
         ],
       },

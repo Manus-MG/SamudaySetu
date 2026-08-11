@@ -179,5 +179,9 @@ export const api = {
   patch: <T>(url: string, data?: unknown): Promise<T> =>
     request<T>({ method: 'PATCH', url, data }),
 
+  /** For replacing a whole value, e.g. a community's join code. */
+  put: <T>(url: string, data?: unknown): Promise<T> =>
+    request<T>({ method: 'PUT', url, data }),
+
   delete: <T>(url: string): Promise<T> => request<T>({ method: 'DELETE', url }),
 };

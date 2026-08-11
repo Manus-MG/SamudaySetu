@@ -1,24 +1,25 @@
 import React, { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
-  ArrowsClockwise,
   Check,
   Copy,
   DownloadSimple,
   QrCode,
   WarningCircle,
+  WhatsappLogo,
 } from '@phosphor-icons/react';
 import { errorMessage } from '../../api/errors.ts';
 import type { JoinKitDto } from '../../api/types.ts';
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard.ts';
 import { communitiesApi, communityKeys } from './communities.api.ts';
+import { InvitePanel } from './InvitePanel.tsx';
+import { JoinCodeEditor } from './JoinCodeEditor.tsx';
 import { Button } from '../../components/ui/button.tsx';
 import { Spinner } from '../../components/ui/spinner.tsx';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '../../components/ui/dialog.tsx';
@@ -30,72 +31,61 @@ interface JoinKitDialogProps {
 }
 
 /**
- * The share sheet for a community: code, link, deep link and QR, each
- * individually copyable.
+ * Everything a leader needs to get people in, ordered by how well each option
+ * works for an elderly member — easiest first, not most technical first.
  *
- * All four are rendered together rather than behind tabs because they are used
- * together — a leader printing a poster wants the QR *and* the code on it, and a
- * WhatsApp broadcast wants the link *and* the code, since forwarded messages
- * routinely lose their link preview.
+ *   1. **Invite by phone.** Nothing to hear, nothing to type. One tap.
+ *   2. **WhatsApp the link.** One tap, and it is the channel they already use.
+ *   3. **The QR.** For a poster or a notice board.
+ *   4. **The code**, spoken or typed. The fallback, which is why it is made of
+ *      words a person can actually repeat.
+ *
+ * The raw deep link and share text sit at the bottom, because they are for the
+ * leader's own tooling rather than for a member.
  */
 export function JoinKitDialog({
   communityId,
   communityName,
   onOpenChange,
 }: JoinKitDialogProps): React.JSX.Element {
-  const queryClient = useQueryClient();
   const { copiedKey, copy } = useCopyToClipboard();
-  const [isConfirmingRotate, setIsConfirmingRotate] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const kitQuery = useQuery({
     queryKey: communityKeys.joinKit(communityId ?? ''),
     queryFn: () => communitiesApi.joinKit(communityId ?? ''),
-    // The QR is a live view of a rotatable secret; a stale one is worse than a spinner.
     enabled: communityId !== null,
+    // The code is rotatable, so a cached kit can point at a code that no longer
+    // works — exactly the failure rotation exists to prevent.
     staleTime: 0,
-  });
-
-  const rotateMutation = useMutation({
-    mutationFn: () => communitiesApi.rotateJoinCode(communityId ?? ''),
-    onSuccess: (kit) => {
-      setIsConfirmingRotate(false);
-      setActionError(null);
-      queryClient.setQueryData(communityKeys.joinKit(kit.communityId), kit);
-      // The code is denormalised onto the community row too.
-      void queryClient.invalidateQueries({ queryKey: communityKeys.all });
-    },
-    onError: (error: unknown) => setActionError(errorMessage(error)),
   });
 
   const kit = kitQuery.data;
 
-  const handleClose = (open: boolean): void => {
-    if (!open) {
-      setIsConfirmingRotate(false);
-      setActionError(null);
-    }
-    onOpenChange(open);
-  };
-
   return (
-    <Dialog open={communityId !== null} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg">
+    <Dialog
+      open={communityId !== null}
+      onOpenChange={(open) => {
+        if (!open) setActionError(null);
+        onOpenChange(open);
+      }}
+    >
+      <DialogContent className="sm:max-w-xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <QrCode className="h-4 w-4" weight="bold" />
-            Join kit
+            How people join {communityName}
           </DialogTitle>
           <DialogDescription>
-            Anyone with this code, link or QR can join {communityName}. Rotate it the moment it
-            reaches somewhere it should not have.
+            Anyone holding the code, link or QR can join. Change the code the moment it reaches
+            somewhere it should not have.
           </DialogDescription>
         </DialogHeader>
 
         {kitQuery.isPending && (
-          <div className="flex items-center justify-center gap-2 py-12 text-xs text-zinc-500">
+          <div className="flex items-center justify-center gap-2 py-16 text-xs text-zinc-500">
             <Spinner />
-            <span>Loading join kit…</span>
+            <span>Loading…</span>
           </div>
         )}
 
@@ -109,7 +99,7 @@ export function JoinKitDialog({
         )}
 
         {kit && (
-          <div className="space-y-4 py-1">
+          <div className="space-y-5 py-1">
             {actionError && (
               <div
                 role="alert"
@@ -120,86 +110,79 @@ export function JoinKitDialog({
               </div>
             )}
 
-            <QrPanel kit={kit} />
+            {/* 1 — the easiest path for the member */}
+            <Section step={1} title="Easiest: invite them directly">
+              <InvitePanel communityId={kit.communityId} onError={setActionError} />
+            </Section>
 
-            <div className="space-y-2">
-              <CopyRow
-                label="Join code"
-                value={kit.joinCodeFormatted}
-                copyValue={kit.joinCode}
-                fieldKey="code"
-                mono
-                copiedKey={copiedKey}
-                onCopy={copy}
-              />
-              <CopyRow
-                label="Join link"
-                value={kit.joinUrl}
-                fieldKey="url"
-                copiedKey={copiedKey}
-                onCopy={copy}
-              />
-              <CopyRow
-                label="App deep link"
-                value={kit.deepLink}
-                fieldKey="deep"
-                copiedKey={copiedKey}
-                onCopy={copy}
-              />
-              <CopyRow
-                label="WhatsApp message"
-                value={kit.shareMessage}
-                fieldKey="share"
-                multiline
-                copiedKey={copiedKey}
-                onCopy={copy}
-              />
-            </div>
+            {/* 2 — one tap, on the channel they already use */}
+            <Section step={2} title="Share the link on WhatsApp">
+              <div className="flex items-center gap-2">
+                <a
+                  href={kit.whatsAppUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-md bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700"
+                >
+                  <WhatsappLogo className="h-4 w-4" weight="fill" />
+                  Open WhatsApp
+                </a>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 text-xs gap-1.5"
+                  onClick={() => void copy(kit.joinUrl, 'url')}
+                >
+                  {copiedKey === 'url' ? (
+                    <>
+                      <Check className="h-3.5 w-3.5" weight="bold" /> Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3.5 w-3.5" /> Copy link
+                    </>
+                  )}
+                </Button>
+              </div>
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1.5 truncate">
+                {kit.joinUrl}
+              </p>
+            </Section>
+
+            {/* 3 — for the notice board */}
+            <Section step={3} title="Print the QR for a notice board">
+              <QrPanel kit={kit} />
+            </Section>
+
+            {/* 4 — the spoken fallback */}
+            <Section step={4} title="Or read out the code">
+              <JoinCodeEditor kit={kit} onError={setActionError} />
+            </Section>
+
+            <details className="text-xs">
+              <summary className="cursor-pointer text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 text-[11px]">
+                Message text and app deep link
+              </summary>
+              <div className="mt-2 space-y-2">
+                <CopyRow
+                  label="WhatsApp message"
+                  value={kit.shareMessage}
+                  fieldKey="share"
+                  multiline
+                  copiedKey={copiedKey}
+                  onCopy={copy}
+                />
+                <CopyRow
+                  label="App deep link"
+                  value={kit.deepLink}
+                  fieldKey="deep"
+                  copiedKey={copiedKey}
+                  onCopy={copy}
+                />
+              </div>
+            </details>
           </div>
         )}
-
-        <DialogFooter className="gap-2">
-          {isConfirmingRotate ? (
-            <>
-              <span className="flex-1 text-[11px] text-amber-700 dark:text-amber-400 self-center text-left">
-                The current code stops working immediately. Existing members stay.
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs"
-                onClick={() => setIsConfirmingRotate(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                className="text-xs gap-1.5"
-                disabled={rotateMutation.isPending}
-                onClick={() => rotateMutation.mutate()}
-              >
-                {rotateMutation.isPending ? (
-                  <Spinner className="h-3.5 w-3.5" />
-                ) : (
-                  <ArrowsClockwise className="h-3.5 w-3.5" />
-                )}
-                Rotate code
-              </Button>
-            </>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs gap-1.5"
-              disabled={!kit}
-              onClick={() => setIsConfirmingRotate(true)}
-            >
-              <ArrowsClockwise className="h-3.5 w-3.5" />
-              Rotate code
-            </Button>
-          )}
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
@@ -207,12 +190,31 @@ export function JoinKitDialog({
 
 // ── Pieces ───────────────────────────────────────────────────────────────────
 
+function Section({
+  step,
+  title,
+  children,
+}: {
+  step: number;
+  title: string;
+  children: React.ReactNode;
+}): React.JSX.Element {
+  return (
+    <section className="space-y-2">
+      <h3 className="flex items-center gap-2 text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-zinc-900 text-[10px] text-white dark:bg-zinc-100 dark:text-zinc-900">
+          {step}
+        </span>
+        {title}
+      </h3>
+      {children}
+    </section>
+  );
+}
+
 /**
- * The QR with a download affordance.
- *
- * The image is the server-rendered data URL rather than a fetch of the `.svg`
- * endpoint: it is already in the response, so it paints with no second request
- * and no flash of empty space.
+ * The QR, from the data URL already in the response — no second request, and no
+ * flash of empty space where the image will be.
  */
 function QrPanel({ kit }: { kit: JoinKitDto }): React.JSX.Element {
   const download = (): void => {
@@ -227,14 +229,14 @@ function QrPanel({ kit }: { kit: JoinKitDto }): React.JSX.Element {
       <img
         src={kit.qrDataUrl}
         alt={`QR code to join ${kit.communityName}`}
-        width={132}
-        height={132}
+        width={116}
+        height={116}
         className="rounded bg-white shrink-0"
       />
       <div className="min-w-0 space-y-2">
-        <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed">
-          Print this on a notice board or a pamphlet. Scanning it opens the app for anyone who
-          already has it installed, and the join page for everyone else.
+        <p className="text-[11px] text-zinc-600 dark:text-zinc-300 leading-relaxed">
+          Scanning it opens the app for anyone who has it, and the join page for everyone else.
+          Print the code underneath as well — not everyone will manage a scan.
         </p>
         <Button variant="outline" size="sm" className="text-xs h-7 gap-1.5" onClick={download}>
           <DownloadSimple className="h-3.5 w-3.5" />
@@ -247,12 +249,8 @@ function QrPanel({ kit }: { kit: JoinKitDto }): React.JSX.Element {
 
 interface CopyRowProps {
   label: string;
-  /** What the user sees. */
   value: string;
-  /** What lands on the clipboard, when it differs — e.g. the ungrouped code. */
-  copyValue?: string;
   fieldKey: string;
-  mono?: boolean;
   multiline?: boolean;
   copiedKey: string | null;
   onCopy: (value: string, key: string) => Promise<boolean>;
@@ -261,9 +259,7 @@ interface CopyRowProps {
 function CopyRow({
   label,
   value,
-  copyValue,
   fieldKey,
-  mono,
   multiline,
   copiedKey,
   onCopy,
@@ -273,12 +269,10 @@ function CopyRow({
   return (
     <div className="flex items-start gap-2 p-2 rounded-md border border-zinc-200 dark:border-zinc-800">
       <div className="min-w-0 flex-1">
-        <div className="text-[10px] uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
-          {label}
-        </div>
+        <div className="text-[10px] uppercase tracking-wide text-zinc-400">{label}</div>
         <div
-          className={`text-xs text-zinc-900 dark:text-zinc-100 ${mono ? 'font-mono tracking-wider text-sm' : ''} ${
-            multiline ? 'whitespace-pre-line' : 'truncate'
+          className={`text-xs text-zinc-900 dark:text-zinc-100 ${
+            multiline ? 'whitespace-pre-line' : 'truncate font-mono'
           }`}
           title={multiline ? undefined : value}
         >
@@ -291,13 +285,10 @@ function CopyRow({
         size="sm"
         aria-label={`Copy ${label}`}
         className="h-7 px-2 text-xs shrink-0"
-        onClick={() => void onCopy(copyValue ?? value, fieldKey)}
+        onClick={() => void onCopy(value, fieldKey)}
       >
         {isCopied ? (
-          <>
-            <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" weight="bold" />
-            <span className="ml-1 text-emerald-600 dark:text-emerald-400">Copied</span>
-          </>
+          <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" weight="bold" />
         ) : (
           <Copy className="h-3.5 w-3.5" />
         )}

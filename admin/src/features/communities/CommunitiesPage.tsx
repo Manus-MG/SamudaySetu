@@ -293,7 +293,7 @@ export function CommunitiesPage(): React.JSX.Element {
                       {row.status === 'ARCHIVED' ? (
                         <span className="text-zinc-400">released</span>
                       ) : (
-                        row.joinCodeFormatted
+                        row.joinCode
                       )}
                     </td>
 
