@@ -66,6 +66,19 @@ void main() {
       expect(routes, isNot(contains(AppRoutes.home)));
     });
 
+    test('offers the samaj परिचय to every role, joined or not', () {
+      // The one section that is not gated on having a community record. A
+      // member deciding whether to join has to be able to read who the samaj
+      // is first, so dropping this from any role is a regression.
+      for (final AppUser value in <AppUser>[
+        user(),
+        user(communityId: 'c1'),
+        user(role: UserRole.leader, communityId: 'c1'),
+      ]) {
+        expect(routesFor(value), contains(AppRoutes.about));
+      }
+    });
+
     test('treats an admin without a community like any unjoined member', () {
       expect(routesFor(user(role: UserRole.admin)),
           contains(AppRoutes.joinCommunity));

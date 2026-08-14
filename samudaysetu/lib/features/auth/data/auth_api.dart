@@ -1,3 +1,4 @@
+import '../../../core/config/app_brand.dart';
 import '../../../core/network/api_client.dart';
 import '../domain/app_user.dart';
 
@@ -32,7 +33,7 @@ class AuthApi {
       'otp': otp,
       'device': <String, String>{
         'deviceId': deviceId,
-        'deviceName': 'Samuday Setu (Android)',
+        'deviceName': '${AppBrand.appTitle} (Android)',
         'platform': 'android',
       },
     });

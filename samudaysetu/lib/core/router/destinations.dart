@@ -121,6 +121,23 @@ abstract final class AppDestinations {
 
   // ── Shared ─────────────────────────────────────────────────────────────────
 
+  static const NavDestination _about = NavDestination(
+    label: 'समाज परिचय',
+    icon: Icons.auto_stories_rounded,
+    route: AppRoutes.about,
+  );
+
+  /// Offered to every role, including a member who has joined nothing.
+  ///
+  /// Every other section is about a member's own record and is therefore
+  /// gated on having one. This one is about the samaj, which is true of the
+  /// user before they join and stays true after — and for somebody deciding
+  /// whether this app is *theirs*, it is the section that answers the question.
+  static const NavSection _samaj = NavSection(
+    title: 'समाज',
+    destinations: <NavDestination>[_about],
+  );
+
   static const NavDestination _profile = NavDestination(
     label: 'मेरा खाता',
     icon: Icons.person_rounded,
@@ -138,12 +155,14 @@ abstract final class AppDestinations {
       title: 'समुदाय',
       destinations: <NavDestination>[_myCommunity, _events],
     ),
+    _samaj,
     _account,
   ];
 
   static const List<NavSection> _memberUnjoined = <NavSection>[
     NavSection(destinations: <NavDestination>[_home]),
     NavSection(title: 'समुदाय', destinations: <NavDestination>[_join]),
+    _samaj,
     _account,
   ];
 
@@ -155,6 +174,7 @@ abstract final class AppDestinations {
       // order the dashboard's own action list uses.
       destinations: <NavDestination>[_members, _invites, _share, _edit],
     ),
+    _samaj,
     _account,
   ];
 

@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Samudaysetu</string>
+	<string>Arkvanshi Samaj Setu</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -52,15 +52,15 @@
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Samuday Setu needs access to your camera to take profile and community photos.</string>
+	<string>Arkvanshi Samaj Setu needs access to your camera to take profile and community photos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Samuday Setu needs access to your photo library to select photos and documents.</string>
+	<string>Arkvanshi Samaj Setu needs access to your photo library to select photos and documents.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Samuday Setu needs permission to save images to your photo library.</string>
+	<string>Arkvanshi Samaj Setu needs permission to save images to your photo library.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Samuday Setu needs access to your location to help you find nearby communities and events.</string>
+	<string>Arkvanshi Samaj Setu needs access to your location to help you find nearby communities and events.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Samuday Setu needs access to your microphone for audio recordings.</string>
+	<string>Arkvanshi Samaj Setu needs access to your microphone for audio recordings.</string>
 	<!-- Custom-scheme fallback, matching MOBILE_DEEP_LINK_SCHEME on the backend.
 	     Universal Links (the https form) are configured separately, in
 	     Runner.entitlements, because they require an entitlement rather than a

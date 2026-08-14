@@ -8,6 +8,7 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../features/auth/application/session_controller.dart';
 import '../../features/auth/domain/app_user.dart';
+import '../config/app_brand.dart';
 import '../router/destinations.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_theme.dart';
@@ -204,6 +205,21 @@ class _Header extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          // The wordmark above the member, not below: this is the surface that
+          // is one gesture from every screen, so it is where the samaj's name
+          // belongs. The app bars elsewhere carry the screen's own title.
+          Text(
+            AppBrand.wordmark,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.small.copyWith(
+              height: AppTheme.devanagariLineHeight,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
+              color: AppPalette.white.withValues(alpha: 0.82),
+            ),
+          ),
+          const SizedBox(height: 16),
           AppAvatar(initials: user.initials, seed: user.id, size: 56),
           const SizedBox(height: 14),
           Text(

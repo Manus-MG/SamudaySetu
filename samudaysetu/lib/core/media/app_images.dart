@@ -107,6 +107,18 @@ abstract final class AppImages {
   static const AppImage communityBanner =
       AppImage._('1774615600073-5e04e3082108', IllustrationMotif.gathering);
 
+  // ── About the samaj ───────────────────────────────────────────────────────
+  /// The masthead on `समाज परिचय`.
+  ///
+  /// **This is the slot to replace before the samaj sees the app.** It reuses
+  /// [communityBanner]'s photograph, which is a stock gathering — correct in
+  /// tone and wrong in substance on a screen whose entire subject is *this*
+  /// samaj. One real photograph from the community's own archive does more for
+  /// this screen than anything else on it. Swapping it is one photo id here,
+  /// or a URL change in [AppImage.url] if the photo lives elsewhere.
+  static const AppImage samajHeritage =
+      AppImage._('1774615600073-5e04e3082108', IllustrationMotif.gathering);
+
   // ── Auth ──────────────────────────────────────────────────────────────────
   static const AppImage signIn =
       AppImage._('1601689892697-b64daa00ff6d', IllustrationMotif.community);

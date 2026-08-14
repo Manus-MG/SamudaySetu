@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import '../../../core/config/app_brand.dart';
 import '../../../core/media/app_images.dart';
 import '../../../core/theme/app_palette.dart';
 import '../../../core/theme/app_theme.dart';
@@ -73,7 +74,8 @@ class SplashScreen extends StatelessWidget {
                   const _Mark(),
                   const SizedBox(height: 22),
                   Text(
-                    'समुदाय सेतु',
+                    AppBrand.wordmark,
+                    textAlign: TextAlign.center,
                     style: ShadTheme.of(context).textTheme.h3.copyWith(
                           height: AppTheme.devanagariLineHeight,
                           color: AppPalette.white,
@@ -83,6 +85,24 @@ class SplashScreen extends StatelessWidget {
                       .fadeIn(
                         duration: Motion.slow,
                         delay: 120.ms,
+                        curve: Motion.enter,
+                      ),
+                  const SizedBox(height: 6),
+                  // The lineage's own phrase, quieter than the wordmark. It is
+                  // the one line that tells an Arkvanshi member, in the first
+                  // second of the first launch, that this app was built for
+                  // them and not adapted to them.
+                  Text(
+                    AppBrand.motto,
+                    textAlign: TextAlign.center,
+                    style: ShadTheme.of(context).textTheme.p.copyWith(
+                          fontSize: 14,
+                          height: AppTheme.devanagariLineHeight,
+                          color: AppPalette.white.withValues(alpha: 0.82),
+                        ),
+                  ).animate().fadeIn(
+                        duration: Motion.slow,
+                        delay: 320.ms,
                         curve: Motion.enter,
                       ),
                   const SizedBox(height: 32),

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import '../../../core/config/app_brand.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/media/app_images.dart';
 import '../../../core/network/api_failure.dart';
@@ -135,7 +136,7 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
                     image: AppImages.signIn,
                     aspectRatio: 16 / 9,
                     overlay: Text(
-                      'समुदाय सेतु में आपका स्वागत है',
+                      '${AppBrand.wordmark} में आपका स्वागत है',
                       style: theme.textTheme.large.copyWith(
                         height: AppTheme.devanagariLineHeight,
                         color: AppPalette.white,

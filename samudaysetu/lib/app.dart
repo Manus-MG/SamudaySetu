@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import 'core/config/app_brand.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 
@@ -33,7 +34,7 @@ class SamudaySetuApp extends ConsumerWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       appBuilder: (context) => MaterialApp.router(
-        title: 'Samuday Setu',
+        title: AppBrand.appTitle,
         debugShowCheckedModeBanner: false,
         routerConfig: router,
         theme: AppTheme.materialFrom(Theme.of(context)),

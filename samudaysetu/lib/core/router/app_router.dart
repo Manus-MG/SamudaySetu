@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../deeplink/deep_link_service.dart';
+import '../../features/about/presentation/about_samaj_screen.dart';
+import '../../features/about/presentation/samaj_values_screen.dart';
 import '../../features/auth/application/session_controller.dart';
 import '../../features/auth/domain/app_user.dart';
 import '../../features/auth/presentation/otp_screen.dart';
@@ -254,6 +256,25 @@ final routerProvider = Provider<GoRouter>((ref) {
           key: state.pageKey,
           child: const HomeScreen(),
         ),
+      ),
+
+      // ── समाज परिचय ─────────────────────────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.about,
+        pageBuilder: (context, state) => fadeThroughPage<void>(
+          key: state.pageKey,
+          child: const AboutSamajScreen(),
+        ),
+        routes: <RouteBase>[
+          GoRoute(
+            // Nested, so the values screen keeps a back arrow to the परिचय.
+            path: 'values',
+            pageBuilder: (context, state) => slidePage<void>(
+              key: state.pageKey,
+              child: const SamajValuesScreen(),
+            ),
+          ),
+        ],
       ),
 
       // ── Joining a community ────────────────────────────────────────────────

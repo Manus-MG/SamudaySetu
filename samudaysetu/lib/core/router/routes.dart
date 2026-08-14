@@ -11,6 +11,19 @@ abstract final class AppRoutes {
   /// The account screen, shared by members and leaders.
   static const String profile = '/profile';
 
+  // ── समाज परिचय ─────────────────────────────────────────────────────────────
+  //
+  // Deliberately *not* nested under [myCommunity]. Who the samaj is has to be
+  // readable by a signed-in member who has not joined anything yet — that is
+  // most of the audience on the day the app is introduced — and the `/community`
+  // prefix guard would bounce exactly those people to the join screen.
+
+  /// History, lineage and the meaning of the name.
+  static const String about = '/about';
+
+  /// Values and objectives. A child of [about] so back returns to it.
+  static const String aboutValues = '/about/values';
+
   // ── Joining a community ────────────────────────────────────────────────────
 
   /// Enter a code by hand. Also the target of a `/join/<code>` deep link, which
