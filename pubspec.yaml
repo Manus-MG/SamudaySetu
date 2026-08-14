@@ -22,6 +22,15 @@ dependencies:
   # depending on someone else's dependency means their minor bump is our breakage.
   flutter_animate: ^4.5.0
 
+  # Photographs are fetched, not bundled: the APK stays small on a metered
+  # connection, and the imagery can change without shipping a release. What
+  # earns the dependency over a bare `Image.network` is the *disk* cache —
+  # without it every cold start re-downloads the same hero over 2G, which for
+  # this user is a real cost in rupees, not just in milliseconds. It also gives
+  # us decode-size capping, which is what keeps a list of covers inside the
+  # memory budget of a 2 GB device. See `core/widgets/app_network_image.dart`.
+  cached_network_image: ^3.4.1
+
   flutter_riverpod: ^2.6.1
   go_router: ^14.6.2
   dio: ^5.7.0

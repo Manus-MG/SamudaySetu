@@ -5,8 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import '../../../core/media/app_images.dart';
 import '../../../core/router/routes.dart';
+import '../../../core/theme/app_palette.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_avatar.dart';
+import '../../../core/widgets/app_illustration.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../../../core/widgets/entrance.dart';
 import '../../auth/application/session_controller.dart';
 import '../../auth/domain/app_user.dart';
@@ -51,6 +56,8 @@ class HomeScreen extends ConsumerWidget {
             // Once they belong somewhere, the community is the thing they came
             // back for — it goes above the account summary.
             if (!user.needsCommunity) ...<Widget>[
+              Entrance.staggered(index: 1, child: const _CommunityBanner()),
+              const SizedBox(height: AppTheme.gutter),
               Entrance.staggered(index: 2, child: const _NavRows()),
               const SizedBox(height: AppTheme.gutter),
             ],
@@ -81,8 +88,9 @@ class _NavRows extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.muted,
-        borderRadius: BorderRadius.circular(14),
+        color: theme.colorScheme.card,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        border: Border.all(color: theme.colorScheme.border),
       ),
       child: Column(
         children: <Widget>[
@@ -116,12 +124,25 @@ class _NavRow extends StatelessWidget {
 
     return InkWell(
       onTap: () => context.push(route),
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         child: Row(
           children: <Widget>[
-            Icon(icon, size: 22, color: theme.colorScheme.foreground),
+            Container(
+              height: 40,
+              width: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.accent,
+                borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+              ),
+              child: Icon(
+                icon,
+                size: 20,
+                color: theme.colorScheme.accentForeground,
+              ),
+            ),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
@@ -142,6 +163,34 @@ class _NavRow extends StatelessWidget {
   }
 }
 
+/// The masthead a member sees when they already belong somewhere.
+///
+/// Carries no data — deliberately. The community name and member count are not
+/// in the API yet, and a banner with an invented "142 सदस्य" under it is worse
+/// than a banner with none: it is the first thing a member would notice was
+/// wrong the day the real number appeared. When the endpoint lands, the caption
+/// slot below is where it goes.
+class _CommunityBanner extends StatelessWidget {
+  const _CommunityBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = ShadTheme.of(context);
+
+    return AppHeroImage(
+      image: AppImages.communityBanner,
+      aspectRatio: 21 / 9,
+      overlay: Text(
+        'आपका समुदाय',
+        style: theme.textTheme.h4.copyWith(
+          height: AppTheme.devanagariLineHeight,
+          color: AppPalette.white,
+        ),
+      ),
+    );
+  }
+}
+
 /// The call to action for a member who has not joined anything yet.
 ///
 /// Written as an invitation rather than a warning: someone who just installed
@@ -155,42 +204,60 @@ class _JoinCommunityCard extends StatelessWidget {
     final theme = ShadTheme.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: theme.colorScheme.primary,
-        borderRadius: BorderRadius.circular(16),
+        gradient: AppSurfaces.brand,
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+        boxShadow: AppSurfaces.lift(theme.brightness),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Icon(
-            LucideIcons.users,
-            size: 28,
-            color: theme.colorScheme.primaryForeground,
-          ),
-          const SizedBox(height: 14),
-          Text(
-            'अपने समुदाय से जुड़ें',
-            style: theme.textTheme.h4.copyWith(
-              height: AppTheme.devanagariLineHeight,
-              color: theme.colorScheme.primaryForeground,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'नेता से मिला कोड डालें, या उनके भेजे लिंक को दबाएँ।',
-            style: theme.textTheme.p.copyWith(
-              height: AppTheme.devanagariLineHeight,
-              color: theme.colorScheme.primaryForeground.withValues(alpha: 0.85),
-            ),
-          ),
-          const SizedBox(height: 18),
+          // Sits above the copy rather than behind it. A photograph behind
+          // Devanagari body text needs a scrim heavy enough that the photo
+          // stops being worth showing; giving it its own band keeps both
+          // legible.
           SizedBox(
+            height: 132,
             width: double.infinity,
-            height: AppTheme.minTapTarget,
-            child: ShadButton.secondary(
-              onPressed: () => context.push(AppRoutes.joinCommunity),
-              child: const Text('कोड डालें', style: TextStyle(fontSize: 16)),
+            child: AppNetworkImage(
+              image: AppImages.joinCommunity,
+              fallbackTone: IllustrationTone.onBrand,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  'अपने समुदाय से जुड़ें',
+                  style: theme.textTheme.h4.copyWith(
+                    height: AppTheme.devanagariLineHeight,
+                    color: AppPalette.white,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'नेता से मिला कोड डालें, या उनके भेजे लिंक को दबाएँ।',
+                  style: theme.textTheme.p.copyWith(
+                    height: AppTheme.devanagariLineHeight,
+                    color: AppPalette.white.withValues(alpha: 0.85),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  height: AppTheme.minTapTarget,
+                  child: ShadButton.secondary(
+                    onPressed: () => context.push(AppRoutes.joinCommunity),
+                    child: const Text(
+                      'कोड डालें',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -210,16 +277,10 @@ class _Header extends StatelessWidget {
 
     return Row(
       children: <Widget>[
-        Container(
-          height: 48,
-          width: 48,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.muted,
-            shape: BoxShape.circle,
-          ),
-          child: Text(user.initials, style: theme.textTheme.large),
-        ),
+        // Seeded on the immutable id, not the display name: an avatar that
+        // changes colour because someone corrected a spelling is an avatar
+        // nobody learns to recognise.
+        AppAvatar(initials: user.initials, seed: user.id),
         const SizedBox(width: 14),
         Expanded(
           child: Column(

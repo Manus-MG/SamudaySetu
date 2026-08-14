@@ -7,11 +7,14 @@ import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../../core/config/app_config.dart';
+import '../../../core/media/app_images.dart';
 import '../../../core/network/api_failure.dart';
 import '../../../core/providers.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/app_palette.dart';
 import '../../../core/theme/motion.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../../../core/widgets/entrance.dart';
 
 /// Step one of the only member login: enter a phone number.
@@ -119,11 +122,26 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                const SizedBox(height: 48),
+                const SizedBox(height: 12),
 
+                // A photograph instead of the old 52dp icon tile. This is the
+                // first screen a new member sees after onboarding, and it is
+                // otherwise a heading, a hint and a number field — the point
+                // where an app most looks like a form and least like something
+                // their neighbours use.
                 Entrance.staggered(
                   index: 0,
-                  child: _Mark(theme: theme),
+                  child: AppHeroImage(
+                    image: AppImages.signIn,
+                    aspectRatio: 16 / 9,
+                    overlay: Text(
+                      'समुदाय सेतु में आपका स्वागत है',
+                      style: theme.textTheme.large.copyWith(
+                        height: AppTheme.devanagariLineHeight,
+                        color: AppPalette.white,
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 28),
 
@@ -235,28 +253,3 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
   }
 }
 
-class _Mark extends StatelessWidget {
-  const _Mark({required this.theme});
-
-  final ShadThemeData theme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        height: 52,
-        width: 52,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.primary,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Icon(
-          LucideIcons.users,
-          size: 26,
-          color: theme.colorScheme.primaryForeground,
-        ),
-      ),
-    );
-  }
-}

@@ -4,6 +4,8 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../network/api_failure.dart';
 import '../theme/app_theme.dart';
+import 'app_illustration.dart';
+import 'empty_state.dart';
 
 /// Renders the three states of an [AsyncValue] the same way everywhere.
 ///
@@ -68,32 +70,16 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = ShadTheme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 8),
-      child: Column(
-        children: <Widget>[
-          Icon(
-            Icons.cloud_off_rounded,
-            size: 44,
-            color: theme.colorScheme.mutedForeground,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.p.copyWith(height: AppTheme.devanagariLineHeight),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: AppTheme.minTapTarget,
-            child: ShadButton.outline(
-              onPressed: onRetry,
-              child: const Text('फिर से कोशिश करें', style: TextStyle(fontSize: 16)),
-            ),
-          ),
-        ],
+    return EmptyState(
+      motif: IllustrationMotif.offline,
+      title: 'जुड़ नहीं पाए',
+      message: message,
+      action: ShadButton.outline(
+        onPressed: onRetry,
+        child: const Text(
+          'फिर से कोशिश करें',
+          style: TextStyle(fontSize: 16),
+        ),
       ),
     );
   }
