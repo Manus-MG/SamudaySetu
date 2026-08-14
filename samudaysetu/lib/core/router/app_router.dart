@@ -337,7 +337,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // ── Running a community ────────────────────────────────────────────────
+      // Running a community ────────────────────────────────────────────────
       GoRoute(
         path: AppRoutes.leader,
         pageBuilder: (context, state) => fadeThroughPage<void>(
