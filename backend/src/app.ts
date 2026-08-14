@@ -13,6 +13,7 @@ import {
   notFoundHandler,
   requestContextMiddleware,
 } from './core/middleware/index.js';
+import { linkRoutes } from './modules/links/index.js';
 import { apiRouter } from './modules/index.js';
 
 const HEALTH_PATH_PREFIX = `${API_PREFIX}/health`;
@@ -87,11 +88,22 @@ export function createApp(): Express {
   //    value that reached the database is also in the backups, logs and replicas.
   app.use(aadhaarGuard);
 
+  // 3. Public web surface, at the host root rather than under the API prefix —
+  //    the platforms fix `/.well-known/*`, and `/join/*` is already printed on
+  //    posters, so neither can be namespaced.
+  //
+  //    Ahead of the rate limiter on purpose. These handlers do no I/O and touch
+  //    no database, while the requests hitting them include Google's and Apple's
+  //    App Link verification fetches, which arrive from shared crawler IPs. A
+  //    429 there does not fail loudly — it silently leaves every install falling
+  //    back to the browser, which is the exact bug this module exists to fix.
+  app.use(linkRoutes);
+
   app.use(globalRateLimiter);
 
   app.use(API_PREFIX, apiRouter);
 
-  // 3. Terminal handlers, in this order and always last.
+  // 4. Terminal handlers, in this order and always last.
   app.use(notFoundHandler);
   app.use(errorHandler);
 

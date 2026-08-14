@@ -50,6 +50,13 @@ const joinRateLimiter = createRateLimiter({
 
 communityRoutes.get('/mine', communitiesController.getMine);
 
+/**
+ * Declared before `/:id/join-kit`, and the order is load-bearing: Express matches
+ * in registration order, so the parameterised route further down would otherwise
+ * capture `mine` as an id and reject it as a malformed ObjectId.
+ */
+communityRoutes.get('/mine/join-kit', communitiesController.getMyJoinKit);
+
 communityRoutes.get(
   '/lookup/:code',
   joinRateLimiter,

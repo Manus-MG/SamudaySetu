@@ -167,8 +167,10 @@ class _JoinCommunityScreenState extends ConsumerState<JoinCommunityScreen> {
 
                 const SizedBox(height: 16),
                 Entrance.staggered(index: 3, child: _continueButton()),
+                const SizedBox(height: 12),
+                Entrance.staggered(index: 4, child: const _ScanButton()),
                 const SizedBox(height: 24),
-                Entrance.staggered(index: 4, child: const _HelpNote()),
+                Entrance.staggered(index: 5, child: const _HelpNote()),
               ],
             ),
           ),
@@ -273,6 +275,35 @@ class _JoinCommunityScreenState extends ConsumerState<JoinCommunityScreen> {
 }
 
 // ── Pieces ───────────────────────────────────────────────────────────────────
+
+/// The way past this screen without typing anything.
+///
+/// Second, not first. A scan needs the other person present with their phone
+/// unlocked and the QR on screen; the field above works with a code on a scrap
+/// of paper or remembered from a phone call, which is the more common situation.
+/// Offering the camera first would make the harder precondition look like the
+/// expected one.
+class _ScanButton extends StatelessWidget {
+  const _ScanButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: AppTheme.minTapTarget,
+      child: ShadButton.outline(
+        onPressed: () => context.push(AppRoutes.joinScan),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(Icons.qr_code_scanner_rounded, size: 20),
+            SizedBox(width: 8),
+            Text('QR स्कैन करें', style: TextStyle(fontSize: 16)),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _Instruction extends StatelessWidget {
   const _Instruction();

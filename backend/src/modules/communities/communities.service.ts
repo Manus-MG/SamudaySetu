@@ -154,6 +154,26 @@ function toLocationUpdate(
   };
 }
 
+/**
+ * The community the actor belongs to, as a document.
+ *
+ * "Belongs to" means two different things by role and both are handled here so
+ * the two callers below cannot drift: a leader is bound to a community by
+ * `leaderId`, while a member is bound by their own `communityId`. Staff belong
+ * to none — they administer communities rather than join them — so `null` is an
+ * ordinary answer, not a missing record.
+ */
+async function findMyCommunity(actor: Principal): Promise<CommunityDocument | null> {
+  if (actor.role === 'LEADER') {
+    return communitiesRepository.findLiveByLeader(actor.userId);
+  }
+
+  const user = await usersService.getById(actor.userId);
+  if (!user.communityId) return null;
+
+  return communitiesRepository.findById(user.communityId);
+}
+
 // ── Service ──────────────────────────────────────────────────────────────────
 
 export const communitiesService = {
@@ -252,15 +272,7 @@ export const communitiesService = {
    * belong to one.
    */
   async getMine(actor: Principal): Promise<CommunityDto | null> {
-    if (actor.role === 'LEADER') {
-      const led = await communitiesRepository.findLiveByLeader(actor.userId);
-      return led ? toCommunityDto(led) : null;
-    }
-
-    const user = await usersService.getById(actor.userId);
-    if (!user.communityId) return null;
-
-    const community = await communitiesRepository.findById(user.communityId);
+    const community = await findMyCommunity(actor);
     return community ? toCommunityDto(community) : null;
   },
 
@@ -475,6 +487,29 @@ export const communitiesService = {
   },
 
   /** Code, link, deep link, QR and share text for an existing community. */
+  /**
+   * The share bundle for the actor's *own* community, authorised by membership
+   * rather than by permission.
+   *
+   * An ordinary member holds no `community:read`, so `getJoinKit` below is closed
+   * to them — correctly, since it takes an arbitrary id. But a member passing the
+   * code to their neighbour is the platform's main growth path, and making them
+   * retype a code they can see on screen while the leader gets a QR and a
+   * composed WhatsApp message is a self-inflicted wound.
+   *
+   * Nothing here is privileged: the code, the name and the member count are
+   * already on the member's community screen. What this adds is the *rendering* —
+   * QR, share text, links — built once on the server so the phrasing cannot drift
+   * between the two clients.
+   *
+   * Returns `null` for someone who belongs nowhere, matching `getMine`, so the
+   * caller renders an empty state instead of handling a 404.
+   */
+  async getMyJoinKit(actor: Principal): Promise<JoinKitDto | null> {
+    const community = await findMyCommunity(actor);
+    return community ? toJoinKitDto(community) : null;
+  },
+
   async getJoinKit(actor: Principal, id: string): Promise<JoinKitDto> {
     const community = await getOrThrow(id);
     assertMayManage(actor, community);

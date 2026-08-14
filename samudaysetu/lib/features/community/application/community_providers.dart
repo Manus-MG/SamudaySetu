@@ -36,6 +36,19 @@ final joinKitProvider =
   return ref.watch(communityApiProvider).joinKit(communityId);
 });
 
+/// The signed-in user's own share kit, whatever their role.
+///
+/// Separate from [joinKitProvider] because the two are authorised differently —
+/// see `CommunityApi.myJoinKit`. Keyed on the user id for the same reason
+/// [myCommunityProvider] is: signing in as somebody else must not serve the
+/// previous account's code from cache.
+final myJoinKitProvider = FutureProvider.autoDispose<JoinKit?>((ref) async {
+  final userId = ref.watch(sessionControllerProvider.select((state) => state.user?.id));
+  if (userId == null) return null;
+
+  return ref.watch(communityApiProvider).myJoinKit();
+});
+
 /// Arguments for a paged, searchable member list.
 ///
 /// A record rather than a class so Riverpod's family equality works without a
@@ -65,6 +78,7 @@ final communityInvitesProvider =
 /// request on a screen nobody is looking at.
 void invalidateCommunity(Ref ref) {
   ref.invalidate(myCommunityProvider);
+  ref.invalidate(myJoinKitProvider);
   ref.invalidate(joinKitProvider);
   ref.invalidate(communityMembersProvider);
   ref.invalidate(communityInvitesProvider);
@@ -74,6 +88,7 @@ void invalidateCommunity(Ref ref) {
 /// exposes `invalidate`, so this small duplication is unavoidable.
 void invalidateCommunityFrom(WidgetRef ref) {
   ref.invalidate(myCommunityProvider);
+  ref.invalidate(myJoinKitProvider);
   ref.invalidate(joinKitProvider);
   ref.invalidate(communityMembersProvider);
   ref.invalidate(communityInvitesProvider);

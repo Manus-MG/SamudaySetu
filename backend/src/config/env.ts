@@ -45,6 +45,48 @@ const envSchema = z.object({
     .regex(/^[a-z][a-z0-9+.-]*$/, 'Scheme must be lowercase and URL-safe')
     .default('samudaysetu'),
 
+  /**
+   * Android application id, used by `/.well-known/assetlinks.json`.
+   *
+   * Must match `applicationId` in `samudaysetu/android/app/build.gradle` exactly.
+   * A mismatch does not error anywhere — Android simply declines to verify the
+   * App Link and every join URL keeps opening in the browser.
+   */
+  ANDROID_PACKAGE_NAME: z.string().min(1).default('com.headway.samudaysetu.samudaysetu'),
+
+  /**
+   * SHA-256 fingerprints of the signing certificates, comma-separated, uppercase
+   * hex with colons.
+   *
+   * Plural because a build signed by Play App Signing has two: the upload key you
+   * hold and the app-signing key Google holds. Listing only one means links
+   * verify on your test device and fail for every user who installed from Play.
+   * Get them from Play Console → Setup → App integrity, or:
+   *   keytool -list -v -keystore <keystore> -alias <alias>
+   *
+   * Empty until a release build exists. Verification then fails closed — links
+   * open the web landing page, which is a correct experience, not a broken one.
+   */
+  ANDROID_CERT_FINGERPRINTS: z
+    .string()
+    .default('')
+    .transform((v) =>
+      v
+        .split(',')
+        .map((s) => s.trim().toUpperCase())
+        .filter(Boolean),
+    ),
+
+  /**
+   * iOS app id for `apple-app-site-association`: `<TeamID>.<BundleID>`, e.g.
+   * `A1B2C3D4E5.com.headway.samudaysetu`. Empty until the app is provisioned.
+   */
+  IOS_APP_ID: z.string().default(''),
+
+  /** Store listings, linked from the web landing page for users without the app. */
+  ANDROID_STORE_URL: z.string().default(''),
+  IOS_STORE_URL: z.string().default(''),
+
   OTP_TTL_SECONDS: z.coerce.number().int().positive().default(300),
   OTP_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
   OTP_PER_PHONE_PER_HOUR: z.coerce.number().int().positive().default(3),

@@ -61,6 +61,29 @@
 	<string>Samuday Setu needs access to your location to help you find nearby communities and events.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Samuday Setu needs access to your microphone for audio recordings.</string>
+	<!-- Custom-scheme fallback, matching MOBILE_DEEP_LINK_SCHEME on the backend.
+	     Universal Links (the https form) are configured separately, in
+	     Runner.entitlements, because they require an entitlement rather than a
+	     plist key. This is what the web landing page's button opens when a
+	     Universal Link has not been associated. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.headway.samudaysetu</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>samudaysetu</string>
+			</array>
+		</dict>
+	</array>
+	<!-- Flutter's built-in deep linking is off because `app_links` owns it.
+	     With both enabled the incoming URL is delivered twice and the engine's
+	     copy is pushed at go_router as a raw path it does not recognise. -->
+	<key>FlutterDeepLinkingEnabled</key>
+	<false/>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>https</string>

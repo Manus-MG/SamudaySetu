@@ -8,15 +8,17 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../../core/network/api_failure.dart';
 import '../../../core/providers.dart';
 import '../../../core/router/routes.dart';
+import '../../../core/share/share_payload.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_drawer.dart';
 import '../../../core/widgets/async_view.dart';
 import '../../../core/widgets/entrance.dart';
-import '../../../core/widgets/share_actions.dart';
 import '../../auth/application/session_controller.dart';
 import '../../community_features/presentation/widgets/community_features_section.dart';
 import '../application/community_providers.dart';
 import '../domain/community.dart';
+import '../domain/join_kit.dart';
+import 'widgets/community_share_sheet.dart';
 
 /// A member's view of the community they belong to.
 ///
@@ -118,6 +120,84 @@ class _NotJoined extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// A member's entry point into the same sharing tools the leader has.
+///
+/// The kit is fetched here rather than by the parent, so a member who never taps
+/// share never pays for the request — it carries a base64 QR, which is real
+/// bytes on a metered 2G connection. `myJoinKitProvider` is `autoDispose`, so
+/// scrolling past the card releases it again.
+///
+/// While the kit is loading the button is disabled rather than hidden. A control
+/// that appears a second after the screen settles is one the user's thumb is
+/// already past.
+class _InviteCard extends ConsumerWidget {
+  const _InviteCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = ShadTheme.of(context);
+    final kit = ref.watch(myJoinKitProvider);
+    final payload = kit.valueOrNull?.toSharePayload();
+    final canShare = payload != null;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.muted,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            'किसी और को जोड़ना है?',
+            style: theme.textTheme.large.copyWith(
+              height: AppTheme.devanagariLineHeight,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'WhatsApp, SMS या QR — जैसे चाहें भेजें।',
+            style: theme.textTheme.muted.copyWith(
+              height: AppTheme.devanagariLineHeight,
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: AppTheme.minTapTarget,
+            child: ShadButton.outline(
+              // Keyed on whether there is something to share, not on whether the
+              // request errored. The kit also resolves to a legitimate `null` —
+              // the endpoint answers that way for anyone the server does not
+              // consider a member yet — and keying on `hasError` left that case
+              // as a permanently dead button still labelled "send an invite".
+              //
+              // Anything other than a usable payload becomes a retry, because
+              // this is the request most likely to fail on a weak connection:
+              // it carries the QR image.
+              //
+              // A pattern switch rather than nested ternaries because it is the
+              // only form that binds the non-null payload: Dart does not promote
+              // `payload` through a separate `canShare` boolean, so a ternary
+              // would still be passing a `SharePayload?`.
+              onPressed: switch ((kit.isLoading, payload)) {
+                (true, _) => null,
+                (_, final SharePayload value) =>
+                  () => unawaited(showCommunityShareSheet(context, payload: value)),
+                _ => () => ref.invalidate(myJoinKitProvider),
+              },
+              child: Text(
+                kit.isLoading || canShare ? 'निमंत्रण भेजें' : 'दोबारा कोशिश करें',
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -244,48 +324,7 @@ class _CommunityViewState extends ConsumerState<_CommunityView> {
         // Members pass the code on to neighbours far more than leaders do, so
         // it is here rather than hidden behind a leader-only screen.
         if (community.isAcceptingMembers)
-          Entrance.staggered(
-            index: 1,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.muted,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  Text(
-                    'किसी और को जोड़ना है?',
-                    style: theme.textTheme.large.copyWith(
-                      height: AppTheme.devanagariLineHeight,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'उन्हें यह कोड बताएँ — ${community.joinCodeHindi ?? community.joinCode}',
-                    style: theme.textTheme.muted.copyWith(
-                      height: AppTheme.devanagariLineHeight,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: AppTheme.minTapTarget,
-                    child: ShadButton.outline(
-                      onPressed: () => unawaited(
-                        ShareActions.copy(
-                          context,
-                          community.joinCode,
-                          label: 'कोड कॉपी हो गया',
-                        ),
-                      ),
-                      child: const Text('कोड कॉपी करें', style: TextStyle(fontSize: 16)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          Entrance.staggered(index: 1, child: const _InviteCard()),
 
         const SizedBox(height: 28),
 

@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../deeplink/deep_link_service.dart';
 import '../../features/auth/application/session_controller.dart';
 import '../../features/auth/domain/app_user.dart';
 import '../../features/auth/presentation/otp_screen.dart';
@@ -16,6 +19,7 @@ import '../../features/community/presentation/joined_community_screen.dart';
 import '../../features/community/presentation/leader_dashboard_screen.dart';
 import '../../features/community/presentation/members_screen.dart';
 import '../../features/community/presentation/my_community_screen.dart';
+import '../../features/community/presentation/scan_code_screen.dart';
 import '../../features/community/presentation/share_kit_screen.dart';
 import '../../features/community_features/data/sample_events.dart';
 import '../../features/community_features/domain/community_feature.dart';
@@ -48,7 +52,50 @@ String landingFor(UserRole? role) =>
 /// Module-level rather than provider state because the redirect callback is
 /// synchronous and runs outside any widget build — reading a provider there
 /// would be a lie about when the value is available.
-final ValueNotifier<String?> pendingDeepLink = ValueNotifier<String?>(null);
+///
+/// Deliberately a plain field with a *separate* wake signal rather than one
+/// `ValueNotifier` doing both jobs. The router listens to [_deepLinkSignal] so a
+/// link arriving while the app is idle re-runs the redirect; if the store itself
+/// were that listenable, then parking or clearing a destination *from inside*
+/// the redirect — which both branches below do — would notify go_router while it
+/// is evaluating a redirect, and that surfaces as `setState() called during
+/// build`. Splitting them means only [parkDeepLink], called from outside the
+/// router, ever wakes it.
+String? _pendingDeepLink;
+
+final ValueNotifier<int> _deepLinkSignal = ValueNotifier<int>(0);
+
+/// Parks [location] and asks the router to re-evaluate.
+///
+/// For links arriving from the OS. The redirect parks its own destinations
+/// directly, without the signal, because it is already running.
+void parkDeepLink(String location) {
+  _pendingDeepLink = location;
+  _deepLinkSignal.value++;
+}
+
+/// Binds the OS link stream to the router. Watched once, in `SamudaySetuApp`.
+///
+/// A provider rather than a `initState` in the root widget so that the
+/// subscription's lifetime is the container's, not a widget's — the root widget
+/// rebuilds on every theme change, and re-subscribing there would either leak a
+/// stream per rebuild or need its own guard.
+final deepLinkServiceProvider = Provider<DeepLinkService>((ref) {
+  final service = DeepLinkService(
+    // Warm start: the app is already on screen, so navigate. `go`, not `push` —
+    // a link is a destination, and stacking join screens behind each other on
+    // repeated taps gives the user a back button that walks through their own
+    // history of tapping the same message.
+    onLink: (location) => ref.read(routerProvider).go(location),
+    // Cold start: park it. See `DeepLinkService` for why this cannot navigate.
+    onColdStart: parkDeepLink,
+  );
+
+  ref.onDispose(() => unawaited(service.dispose()));
+  unawaited(service.start());
+
+  return service;
+});
 
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
@@ -79,7 +126,12 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     initialLocation: AppRoutes.splash,
-    refreshListenable: refresh,
+    // Both signals, and the second is not redundant. A cold-start link is parked
+    // after `getInitialLink()` resolves, which races the session restore: lose
+    // that race and the redirect has already run, so without a listener here the
+    // parked destination would sit unread until some unrelated session change
+    // fired it at a baffling moment.
+    refreshListenable: Listenable.merge(<Listenable?>[refresh, _deepLinkSignal]),
     debugLogDiagnostics: kDebugMode,
     redirect: (context, state) {
       final session = ref.read(sessionControllerProvider);
@@ -102,9 +154,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         // a session, honour it instead of dropping the user on the home screen.
         // Without this, tapping a WhatsApp invite while signed out means signing
         // in and then having to find the invite message again.
-        final pending = pendingDeepLink.value;
+        final pending = _pendingDeepLink;
         if (pending != null) {
-          pendingDeepLink.value = null;
+          _pendingDeepLink = null;
           return pending;
         }
 
@@ -144,7 +196,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // normal case, not the edge case.
       if (location.startsWith(AppRoutes.invite) ||
           location.startsWith(AppRoutes.joinCommunity)) {
-        pendingDeepLink.value = state.uri.toString();
+        _pendingDeepLink = state.uri.toString();
         return AppRoutes.phone;
       }
 
@@ -212,6 +264,17 @@ final routerProvider = Provider<GoRouter>((ref) {
           child: const JoinCommunityScreen(),
         ),
         routes: <RouteBase>[
+          GoRoute(
+            // Before `:code`, and the order is the whole reason this is a
+            // literal child rather than a sibling route: go_router matches in
+            // declaration order, so `:code` declared first would capture `scan`
+            // and send the user to look up a community called SCAN.
+            path: 'scan',
+            pageBuilder: (context, state) => slidePage<void>(
+              key: state.pageKey,
+              child: const ScanCodeScreen(),
+            ),
+          ),
           GoRoute(
             path: 'confirm',
             pageBuilder: (context, state) {

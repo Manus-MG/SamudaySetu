@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import '../../../core/share/share_payload.dart';
+
 /// Everything a leader needs to get people through the door, in one object.
 ///
 /// Mirrors `JoinKitDto` in `backend/src/modules/communities/communities.types.ts`.
@@ -76,6 +78,25 @@ class JoinKit {
 
   /// PNG rather than SVG so it renders without `flutter_svg`.
   final Uint8List? qrPngBytes;
+}
+
+/// Adapts the kit to the share layer's currency.
+///
+/// An extension here, on the feature side, rather than a factory on
+/// [SharePayload]: `core` must not know that a community exists. The dependency
+/// points inwards, which is what lets the share machinery be reused by anything
+/// else that eventually needs to be shared.
+extension JoinKitShare on JoinKit {
+  SharePayload toSharePayload() => SharePayload(
+        // Only ever surfaces as an email subject line or an attachment title, so
+        // it names the community rather than repeating the invitation.
+        subject: '$communityName — जुड़ने का निमंत्रण',
+        message: shareMessage,
+        url: joinUrl,
+        code: joinCode,
+        codeSpoken: joinCodeHindi,
+        qrPngBytes: qrPngBytes,
+      );
 }
 
 /// The server's verdict on a proposed custom code.
