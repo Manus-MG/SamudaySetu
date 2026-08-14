@@ -1,5 +1,6 @@
 import { Types } from 'mongoose';
 import { AppError, ErrorCode } from '../../core/errors/index.js';
+import { logger } from '../../core/logger/index.js';
 import type { Principal } from '../../core/security/index.js';
 import { paginate, type Paginated } from '../../shared/types.js';
 import { auditService } from '../audit/audit.service.js';
@@ -33,6 +34,7 @@ import type {
 import {
   CUSTOM_CODE_MESSAGES,
   checkCustomJoinCode,
+  normaliseJoinCode,
   toDisplayCode,
   toHindiCode,
 } from './joinCode.js';
@@ -648,6 +650,16 @@ export const communitiesService = {
     const community = await communitiesRepository.findByJoinCode(rawCode);
 
     if (!community) {
+      // Logged because "the member swears the code is right" is the single most
+      // common support report, and the answer is almost always visible here: the
+      // normalised form we searched for versus what is actually stored. A code is
+      // not a secret worth withholding from our own server log — the leader
+      // prints it on posters.
+      logger.info(
+        { rawCode, normalised: normaliseJoinCode(rawCode) },
+        'Join-code lookup found no live community',
+      );
+
       throw AppError.notFound('No community found for this code', {
         messageHi: 'इस कोड से कोई समुदाय नहीं मिला।',
         details: { unavailableReason: 'NOT_FOUND' },
