@@ -128,6 +128,12 @@ export const communitiesController = {
     sendSuccess(res, await communitiesService.getJoinKit(actor, idParam(req)));
   }),
 
+  /** The caller's own share bundle. Members and leaders alike. */
+  getMyJoinKit: asyncHandler(async (req: Request, res: Response) => {
+    const actor = requireAuth(req);
+    sendSuccess(res, { joinKit: await communitiesService.getMyJoinKit(actor) });
+  }),
+
   rotateJoinCode: asyncHandler(async (req: Request, res: Response) => {
     const actor = requireAuth(req);
     sendSuccess(res, await communitiesService.rotateJoinCode(actor, idParam(req), clientIp(req)));
