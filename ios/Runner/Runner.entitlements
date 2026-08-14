@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- iOS Universal Links.
+
+	     On first launch iOS fetches
+	     https://samudaysetu.onrender.com/.well-known/apple-app-site-association
+	     and, if this bundle's app id is listed under `appIDs`, routes matching
+	     URLs to the app instead of Safari. Served by backend/src/modules/links.
+
+	     This file is not picked up automatically: Xcode must reference it as
+	     CODE_SIGN_ENTITLEMENTS for both the Debug and Release configurations of
+	     the Runner target, and the App ID must have the Associated Domains
+	     capability enabled in the developer portal. Adding the capability in
+	     Xcode (Signing & Capabilities -> + -> Associated Domains) does both. -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:samudaysetu.onrender.com</string>
+	</array>
+</dict>
+</plist>

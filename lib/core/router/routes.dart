@@ -17,6 +17,10 @@ abstract final class AppRoutes {
   /// arrives with the code prefilled.
   static const String joinCommunity = '/join';
 
+  /// Camera scan of a leader's QR. A literal segment under `/join`, so it must
+  /// be declared before the `/join/:code` route or the parameter swallows it.
+  static const String joinScan = '/join/scan';
+
   /// The "is this your community?" step. Reached only with a resolved preview.
   static const String joinConfirm = '/join/confirm';
 

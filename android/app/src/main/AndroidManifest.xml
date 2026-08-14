@@ -52,7 +52,60 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+
+            <!-- Android App Links.
+
+                 `autoVerify` makes Android fetch
+                 https://samudaysetu.onrender.com/.well-known/assetlinks.json at
+                 install time and, if this app's package and signing fingerprint
+                 are listed there, open these URLs directly instead of showing a
+                 disambiguation dialog or handing them to Chrome. The server side
+                 is backend/src/modules/links.
+
+                 `pathPrefix`, not a bare host: the same origin serves the API,
+                 and claiming every URL on it would mean this app volunteering to
+                 open /api/v1/... requests.
+
+                 Verification fails closed. Until ANDROID_CERT_FINGERPRINTS is set
+                 for a real release key, these links open the web landing page —
+                 which is a working experience, not a broken one. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data
+                    android:scheme="https"
+                    android:host="samudaysetu.onrender.com"
+                    android:pathPrefix="/join"/>
+                <data
+                    android:scheme="https"
+                    android:host="samudaysetu.onrender.com"
+                    android:pathPrefix="/invite"/>
+            </intent-filter>
+
+            <!-- Custom-scheme fallback: samudaysetu://join?code=...
+
+                 Unverified by design and therefore never the primary link. It is
+                 what the web landing page's "ऐप में खोलें" button opens, which is
+                 the only path that works when App Link verification has not
+                 happened — a sideloaded build, a device that was offline at
+                 install, or a link opened inside WhatsApp's own browser. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="samudaysetu"/>
+            </intent-filter>
         </activity>
+
+        <!-- Flutter's built-in deep linking is turned off because `app_links`
+             owns it. With both enabled the engine pushes the raw URL at
+             go_router as a route *and* app_links delivers it to
+             DeepLinkService — the app navigates twice, and the first hop is to
+             a path go_router does not recognise. -->
+        <meta-data
+            android:name="flutter_deeplinking_enabled"
+            android:value="false" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

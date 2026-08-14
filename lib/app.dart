@@ -23,6 +23,11 @@ class SamudaySetuApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
 
+    // Starts the OS link listener and keeps it alive for as long as the app is.
+    // Watched rather than read so the provider is created during the first
+    // build — a link tapped before the first frame is parked, not dropped.
+    ref.watch(deepLinkServiceProvider);
+
     return ShadApp.custom(
       themeMode: ThemeMode.system,
       theme: AppTheme.light,

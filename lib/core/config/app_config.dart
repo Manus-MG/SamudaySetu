@@ -1,23 +1,55 @@
 /// Values that must stay identical to the backend contract, plus the handful of
 /// knobs that change per environment.
 ///
-/// `String.fromEnvironment` is compile-time, so the same source builds a debug
-/// APK pointed at an emulator host and a release APK pointed at production
-/// without a code change:
+/// `String.fromEnvironment` is compile-time, so the same source builds a release
+/// APK pointed at production and a debug APK pointed at a local server without a
+/// code change. Production is the *default* so a plain `flutter build` can never
+/// ship an APK that quietly talks to a machine that is not on the user's network:
 ///
 /// ```
+/// # Production (default) — no flag needed.
+/// flutter run
+///
+/// # Local backend from an Android emulator. `10.0.2.2` is the emulator's alias
+/// # for the host machine's `localhost`; on a physical device pass the LAN IP.
 /// flutter run --dart-define=API_BASE_URL=http://10.0.2.2:4000/api/v1
 /// ```
 abstract final class AppConfig {
-  /// `10.0.2.2` is the Android emulator's alias for the host machine's
-  /// `localhost`. On a physical device, pass your machine's LAN IP instead.
+  /// Deployed backend. Ends at the version prefix — every path passed to
+  /// [ApiClient] is relative to it (`/health/live`, `/auth/otp`, …), so this
+  /// value must never carry a trailing slash: Dio would collapse the join and
+  /// produce `//health/live`.
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:4000/api/v1',
+    defaultValue: 'https://samudaysetu.onrender.com/api/v1',
+  );
+
+  /// Host that owns the `https://…/join/<code>` and `/invite/<token>` links.
+  ///
+  /// Derived from [apiBaseUrl] rather than declared separately, because the
+  /// backend serves the landing pages and the App Link association files from
+  /// its own origin — two constants would be two things to keep in step, and the
+  /// symptom of them drifting is that every deep link silently opens a browser.
+  ///
+  /// Compared against the incoming link's host in `DeepLinkService`, so that a
+  /// look-alike URL from another origin cannot drive navigation in this app.
+  static String get linkHost => Uri.parse(apiBaseUrl).host;
+
+  /// Custom scheme registered with both platforms. Must match
+  /// `MOBILE_DEEP_LINK_SCHEME` in the backend's environment, which composes the
+  /// `samudaysetu://join?code=…` URL the web landing page's button opens.
+  static const String deepLinkScheme = String.fromEnvironment(
+    'DEEP_LINK_SCHEME',
+    defaultValue: 'samudaysetu',
   );
 
   static const Duration connectTimeout = Duration(seconds: 15);
-  static const Duration receiveTimeout = Duration(seconds: 20);
+
+  /// Generous on purpose. The backend runs on a host that suspends idle
+  /// instances, so the first request after a quiet period pays a cold start of
+  /// up to ~50s. A tighter budget would surface that as a timeout error on the
+  /// very first screen the user sees.
+  static const Duration receiveTimeout = Duration(seconds: 60);
 
   static const String authorizationHeader = 'Authorization';
 

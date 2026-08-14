@@ -10,7 +10,7 @@ import '../../../core/network/api_failure.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/async_view.dart';
-import '../../../core/widgets/share_actions.dart';
+import '../../../core/share/share_actions.dart';
 import '../application/community_providers.dart';
 import '../domain/community.dart';
 import '../domain/invite.dart';

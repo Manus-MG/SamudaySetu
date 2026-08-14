@@ -4,12 +4,50 @@ Flutter · Riverpod · go_router · Dio · [shadcn_ui](https://mariuti.com/flutt
 
 ```bash
 flutter pub get
+flutter run
+```
+
+The app defaults to the deployed backend at
+`https://samudaysetu.onrender.com/api/v1`, so no flag is needed to run against
+production.
+
+To point a build at a local server instead, override the compile-time constant:
+
+```bash
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:4000/api/v1
 ```
 
 `10.0.2.2` is the Android emulator's alias for your machine's `localhost`. On a
 physical device, pass your machine's LAN IP instead. The backend must be running
-first — see `../backend/README.md`.
+first — see `../backend/README.md`. Plaintext HTTP is permitted in debug builds
+only (`android/app/src/debug/AndroidManifest.xml`).
+
+## Sharing a join code
+
+Both a leader and a member can pass a code on, through the same component
+(`features/community/presentation/widgets/community_share_sheet.dart`): the OS
+share sheet, WhatsApp, the QR as an image, SMS, email, copy-link and copy-code.
+A member can also join by scanning (`/join/scan`).
+
+Links are `https://<backend host>/join/<code>`. The backend serves both the web
+landing page and the App Link association files from that host — see
+`backend/src/modules/links`. Two things must be configured before a tapped link
+opens the app rather than a browser:
+
+| Where | What | Until then |
+| --- | --- | --- |
+| Backend env | `ANDROID_CERT_FINGERPRINTS` (SHA-256 of **both** the upload key and Play's app-signing key) | `/.well-known/assetlinks.json` 404s; Android links open the web page |
+| Backend env | `IOS_APP_ID` = `<TeamID>.<BundleID>` | `apple-app-site-association` 404s; iOS links open Safari |
+| Xcode | Add the Associated Domains capability to the Runner target so `ios/Runner/Runner.entitlements` is referenced as `CODE_SIGN_ENTITLEMENTS` | Universal Links never verify |
+
+The custom scheme `samudaysetu://join?code=…` works without any of that — it is
+what the landing page's button opens, and the fallback on any device where
+verification has not happened.
+
+If the backend host changes, three places move together: `PUBLIC_APP_BASE_URL`
+in the backend env, the `android:host` in `android/app/src/main/AndroidManifest.xml`,
+and the `applinks:` entry in `ios/Runner/Runner.entitlements`. The app derives
+its own check from `API_BASE_URL`, so it needs no third edit.
 
 ## What exists
 

@@ -132,6 +132,23 @@ class CommunityApi {
     return Community.fromJson(data);
   }
 
+  /// The share bundle for whichever community the signed-in user belongs to.
+  ///
+  /// Distinct from [joinKit] and not a convenience wrapper around it: that one
+  /// takes an id and is gated on `community:read`, which an ordinary member does
+  /// not hold. This one is authorised by membership. Members pass the code on to
+  /// neighbours more than leaders do, so they get the same server-composed
+  /// message and QR rather than a second-class "copy the code" button.
+  ///
+  /// Null when the caller belongs to no community — an ordinary state with its
+  /// own screen, not an error.
+  Future<JoinKit?> myJoinKit() async {
+    final data = await _client.get('/communities/mine/join-kit');
+    final kit = data['joinKit'];
+    if (kit is! Map<String, dynamic>) return null;
+    return JoinKit.fromJson(kit);
+  }
+
   Future<JoinKit> joinKit(String id) async {
     final data = await _client.get('/communities/$id/join-kit');
     return JoinKit.fromJson(data);

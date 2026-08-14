@@ -46,6 +46,32 @@ dependencies:
   # hoping the user finds the right chat is not a substitute.
   url_launcher: ^6.3.1
 
+  # The OS share sheet. `url_launcher` can only aim at one app it already knows
+  # about; this hands the invite to whatever the user actually has — WhatsApp,
+  # Telegram, SMS, Gmail, Bluetooth, a file manager — without us enumerating
+  # them or shipping a new build when the answer changes. It is also the only
+  # way to attach the QR *image* to a message, which is how a code reaches a
+  # WhatsApp group that nobody will type a link into.
+  share_plus: ^10.1.4
+
+  # Writes the QR to the cache directory so it can be attached to a share. The
+  # platform share APIs take a file path, not bytes, so this is not optional
+  # once image sharing is in scope.
+  path_provider: ^2.1.5
+
+  # Scanning the leader's QR. The heaviest dependency here (~2 MB, it carries a
+  # platform barcode engine), and it earns that: the alternative for a member is
+  # reading a two-word code off someone else's screen and typing it, which is
+  # exactly the step this audience fails at. Scoped to `formats: [qrCode]` at
+  # the call site so nothing else is decoded.
+  mobile_scanner: ^6.0.2
+
+  # Receives `https://<host>/join/<code>` and `samudaysetu://join?code=<code>`
+  # from the OS and hands them to go_router. Without it the intent-filters and
+  # association files are inert — the app opens on the splash screen and the
+  # code the user tapped is lost.
+  app_links: ^6.3.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
