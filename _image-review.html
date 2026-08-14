@@ -1,0 +1,56 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Samuday Setu — image review</title>
+<style>
+ body{margin:0;background:#FDFBF7;font:13px -apple-system,Helvetica,Arial;color:#1B1A2E;padding-bottom:40px}
+ header{padding:18px 14px 4px}
+ h1{font-size:17px;margin:0}
+ p{color:#6B6255;margin:6px 0 0;max-width:70ch;line-height:1.5}
+ h2{margin:22px 14px 8px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:#92400E}
+ .g{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;padding:0 14px}
+ figure{margin:0}
+ img{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:10px;background:#EFE7DA;display:block}
+ figcaption{font-size:11.5px;color:#4A4338;padding:4px 2px 0}
+ code{font-size:10.5px;color:#6B6255;word-break:break-all}
+</style></head><body>
+<header>
+ <h1>Samuday Setu — imagery in use</h1>
+ <p>Every photograph the app renders, at the crop it uses. Source: Unsplash, hotlinked from
+ <code>images.unsplash.com</code> under the Unsplash Licence (free commercial use, attribution optional).
+ To swap one, copy its id into the matching entry in <code>lib/core/media/app_images.dart</code>.
+ Nothing here is bundled in the APK; each is fetched at the exact width it is painted and cached to disk.</p>
+</header>
+<div id="root"></div>
+<script>
+const P='https://images.unsplash.com/photo-', Q='?w=420&q=70&fit=crop&crop=faces,entropy';
+const groups={
+ 'Launch and onboarding':[
+  ['AppImages.splash','1590906424086-3dbc808fd54b','marigold procession — under the brand veil'],
+  ['onboardingCommunity','1759738101500-6d8d522b2681','village women and children'],
+  ['onboardingStructure','1774697443203-0f54409d1613','plotted fields from above'],
+  ['onboardingPrivacy','1724996854069-a7d335193ee2','portrait — one member, one number']],
+ 'Auth and home':[
+  ['signIn','1601689892697-b64daa00ff6d','street gathering'],
+  ['joinCommunity','1723564211731-21ceb97443a5','seated women, looking out'],
+  ['communityBanner','1774615600073-5e04e3082108','village and temple in the hills'],
+  ['inviteKit','1747144930206-fe1011a017e4','crowd, colourful head coverings']],
+ 'Event covers (by EventKind)':[
+  ['meeting','1592820186056-dc600b8ddff4','committee mid-meeting'],
+  ['festival','1774437557008-6f33efdd0332','dhol player in a procession'],
+  ['camp','1708593343442-7595427ddf7b','gathering seated in a circle'],
+  ['drive','1776507178418-b9b689a1ad73','collecting water together'],
+  ['training','1692269725836-fbd72e98883f','classroom']]
+};
+const r=document.getElementById('root');
+for(const [name,items] of Object.entries(groups)){
+  const h=document.createElement('h2');h.textContent=name;r.appendChild(h);
+  const g=document.createElement('div');g.className='g';
+  for(const [id,slug,note] of items){
+    const f=document.createElement('figure');
+    const i=document.createElement('img');i.src=P+slug+Q;i.alt=note;
+    const c=document.createElement('figcaption');
+    c.innerHTML='<b>'+id+'</b> — '+note+'<br><code>'+slug+'</code>';
+    i.onerror=()=>{f.style.outline='2px solid #B91C1C';c.insertAdjacentHTML('afterbegin','<b style="color:#B91C1C">FAILED TO LOAD</b><br>')};
+    f.appendChild(i);f.appendChild(c);g.appendChild(f);
+  }
+  r.appendChild(g);
+}
+</script></body></html>

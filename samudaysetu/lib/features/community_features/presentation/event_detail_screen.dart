@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import '../../../core/media/app_images.dart';
 import '../../../core/router/routes.dart';
+import '../../../core/theme/app_palette.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/hindi_date.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../../../core/widgets/entrance.dart';
 import '../domain/community_event.dart';
 import 'widgets/sample_notice.dart';
@@ -46,26 +49,35 @@ class EventDetailScreen extends StatelessWidget {
               const SizedBox(height: 20),
             ],
 
+            // The kind badge sits *on* the hero rather than beside the title:
+            // the photograph already says "festival" faster than the word does,
+            // and the badge is there to confirm it, not to compete with it.
             Entrance.staggered(
               index: 0,
+              child: AppHeroImage(
+                image: AppImages.eventCover(event.kind.name),
+                overlay: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Icon(event.kind.icon, size: 16, color: AppPalette.white),
+                    const SizedBox(width: 6),
+                    Text(
+                      event.kind.label,
+                      style: theme.textTheme.small.copyWith(
+                        color: AppPalette.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            Entrance.staggered(
+              index: 1,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Container(
-                    height: 52,
-                    width: 52,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.muted,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Icon(
-                      event.kind.icon,
-                      size: 26,
-                      color: theme.colorScheme.foreground,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,7 +107,7 @@ class EventDetailScreen extends StatelessWidget {
             const SizedBox(height: 24),
 
             Entrance.staggered(
-              index: 1,
+              index: 2,
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -133,7 +145,7 @@ class EventDetailScreen extends StatelessWidget {
             const SizedBox(height: 24),
 
             Entrance.staggered(
-              index: 2,
+              index: 3,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
@@ -161,7 +173,7 @@ class EventDetailScreen extends StatelessWidget {
             // tells them nothing, and they have no way to ask.
             if (!isPast)
               Entrance.staggered(
-                index: 3,
+                index: 4,
                 child: Column(
                   children: <Widget>[
                     SizedBox(

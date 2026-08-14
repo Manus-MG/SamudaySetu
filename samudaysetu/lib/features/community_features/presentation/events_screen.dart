@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import '../../../core/media/app_images.dart';
 import '../../../core/router/routes.dart';
+import '../../../core/theme/app_palette.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/hindi_date.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../../../core/widgets/entrance.dart';
 import '../data/sample_events.dart';
 import '../domain/community_event.dart';
@@ -165,7 +168,20 @@ class _EventCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              _DateBlock(date: event.startsAt, isPast: isPast),
+              // A cover per row rather than a hero per screen: the list is what
+              // a member actually scrolls, and a wall of text rows is the thing
+              // they scroll past. Small on purpose — at 76dp the CDN is asked
+              // for a ~228px image, which is a few kilobytes each.
+              //
+              // The date is printed *on* the cover rather than in a tile beside
+              // it. Measured on a 360dp phone, a date tile and a cover together
+              // leave the title about 128dp — roughly six Devanagari
+              // characters before it wraps. Combining them gives back 66dp.
+              _EventCover(
+                kind: event.kind,
+                date: event.startsAt,
+                isPast: isPast,
+              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -244,52 +260,84 @@ class _EventCard extends StatelessWidget {
 
 /// The day and month, stacked. Fixed width so every card's text starts on the
 /// same vertical line — a ragged left edge is what makes a list feel unbuilt.
-class _DateBlock extends StatelessWidget {
-  const _DateBlock({required this.date, required this.isPast});
+/// The square cover on an events row, with the date over it.
+///
+/// Fading a past event rather than desaturating it is deliberate: a
+/// `ColorFiltered` grayscale would be a `saveLayer` per row on a device that
+/// cannot spare them, while an opacity is free to the compositor and reads the
+/// same — "this one is over".
+class _EventCover extends StatelessWidget {
+  const _EventCover({
+    required this.kind,
+    required this.date,
+    required this.isPast,
+  });
 
+  final EventKind kind;
   final DateTime date;
   final bool isPast;
+
+  static const double _size = 76;
 
   @override
   Widget build(BuildContext context) {
     final theme = ShadTheme.of(context);
 
-    return Container(
-      width: 54,
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(
-        color: isPast
-            ? theme.colorScheme.background
-            : theme.colorScheme.primary,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Text(
-            '${date.day}',
-            style: theme.textTheme.h4.copyWith(
-              height: 1.1,
-              color: isPast
-                  ? theme.colorScheme.mutedForeground
-                  : theme.colorScheme.primaryForeground,
+    return Opacity(
+      opacity: isPast ? 0.55 : 1,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+        child: SizedBox.square(
+          dimension: _size,
+          child: DecoratedBox(
+            decoration: BoxDecoration(color: theme.colorScheme.background),
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                AppNetworkImage(image: AppImages.eventCover(kind.name)),
+
+                // The scrim is not optional here. The date is white, the photo
+                // underneath is whatever a stranger uploaded, and half of these
+                // covers are bright sky.
+                const DecoratedBox(
+                  decoration: BoxDecoration(gradient: AppSurfaces.imageScrim),
+                ),
+
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          '${date.day}',
+                          style: theme.textTheme.large.copyWith(
+                            height: 1.05,
+                            fontWeight: FontWeight.w700,
+                            color: AppPalette.white,
+                          ),
+                        ),
+                        Text(
+                          HindiDate.month(date),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.small.copyWith(
+                            fontSize: 11,
+                            height: 1.1,
+                            color: AppPalette.white.withValues(alpha: 0.92),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 2),
-          Text(
-            HindiDate.month(date),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.muted.copyWith(
-              fontSize: 12,
-              height: 1.1,
-              color: isPast
-                  ? theme.colorScheme.mutedForeground
-                  : theme.colorScheme.primaryForeground.withValues(alpha: 0.85),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
+

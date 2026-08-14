@@ -6,9 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import '../../../core/media/app_images.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/motion.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../../auth/application/session_controller.dart';
 
 /// Three slides, then Get Started. Shown once per install.
@@ -34,17 +36,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   static const List<_Slide> _slides = <_Slide>[
     _Slide(
-      icon: LucideIcons.users,
+      image: AppImages.onboardingCommunity,
       title: 'अपने समुदाय से जुड़ें',
       body: 'अपने समाज, संगठन या संस्था के सदस्यों की सूची एक ही जगह पर।',
     ),
     _Slide(
-      icon: LucideIcons.network,
+      image: AppImages.onboardingStructure,
       title: 'अपना संगठन देखें',
       body: 'राष्ट्रीय स्तर से लेकर बूथ तक — पूरी संरचना स्पष्ट रूप से।',
     ),
     _Slide(
-      icon: LucideIcons.shieldCheck,
+      image: AppImages.onboardingPrivacy,
       title: 'सुरक्षित और निजी',
       body: 'सिर्फ़ आपका मोबाइल नंबर चाहिए। कोई आधार नहीं, कोई पासवर्ड नहीं।',
     ),
@@ -168,9 +170,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 }
 
 class _Slide {
-  const _Slide({required this.icon, required this.title, required this.body});
+  const _Slide({required this.image, required this.title, required this.body});
 
-  final IconData icon;
+  /// The photograph for this slide. Falls back to its own illustration when no
+  /// image host is configured or the file has not landed yet, so onboarding is
+  /// never three empty rectangles — see [AppNetworkImage].
+  final AppImage image;
+
   final String title;
   final String body;
 }
@@ -191,75 +197,110 @@ class _SlideView extends StatelessWidget {
     final distance = offset.abs().clamp(0.0, 1.0);
     final opacity = 1 - distance;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppTheme.pagePadding),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          // The icon travels furthest and scales down as it leaves — the layer
-          // the eye reads as "closest", so it should move most.
-          Transform.translate(
-            offset: Offset(offset * 90, 0),
-            child: Transform.scale(
-              scale: 1 - distance * 0.2,
-              child: Opacity(
-                opacity: opacity,
-                child: _SlideIcon(icon: slide.icon),
-              ),
-            ),
-          ),
-          const SizedBox(height: 40),
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        // Sized from the space actually available rather than a constant: on a
+        // 4.5" 480x854 panel a fixed 260dp visual pushes the body text off the
+        // bottom, and this slide is the first thing a new user ever sees.
+        final double visualHeight =
+            math.min(248, constraints.maxHeight * 0.46);
 
-          // Text trails the icon: less travel, so it reads as further away.
-          Transform.translate(
-            offset: Offset(offset * 45, 0),
-            child: Opacity(
-              opacity: opacity,
-              child: Column(
-                children: <Widget>[
-                  Text(
-                    slide.title,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.h2.copyWith(
-                      height: AppTheme.devanagariLineHeight,
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppTheme.pagePadding),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              // The visual travels furthest and scales down as it leaves — the
+              // layer the eye reads as "closest", so it should move most.
+              Transform.translate(
+                offset: Offset(offset * 90, 0),
+                child: Transform.scale(
+                  scale: 1 - distance * 0.2,
+                  child: Opacity(
+                    opacity: opacity,
+                    child: _SlideVisual(
+                      image: slide.image,
+                      height: visualHeight,
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    slide.body,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.muted.copyWith(
-                      fontSize: 15,
-                      height: AppTheme.devanagariLineHeight,
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+              const SizedBox(height: 36),
+
+              // Text trails the visual: less travel, so it reads as further away.
+              Transform.translate(
+                offset: Offset(offset * 45, 0),
+                child: Opacity(
+                  opacity: opacity,
+                  child: Column(
+                    children: <Widget>[
+                      Text(
+                        slide.title,
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.h2.copyWith(
+                          height: AppTheme.devanagariLineHeight,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        slide.body,
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.muted.copyWith(
+                          fontSize: 15,
+                          height: AppTheme.devanagariLineHeight,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
-class _SlideIcon extends StatelessWidget {
-  const _SlideIcon({required this.icon});
+/// The image card at the top of a slide.
+///
+/// A card with a warm gradient behind the photo rather than a bare `Image`:
+/// while the photo is still arriving — or forever, on a build with no image
+/// host — the illustration needs a surface to sit on, and a drawn motif
+/// floating on the page background reads as a missing asset rather than as art.
+class _SlideVisual extends StatelessWidget {
+  const _SlideVisual({required this.image, required this.height});
 
-  final IconData icon;
+  final AppImage image;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
     final theme = ShadTheme.of(context);
+    final Brightness brightness = theme.brightness;
 
-    return Container(
-      height: 132,
-      width: 132,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.muted,
-        shape: BoxShape.circle,
+    // `maxHeight`, not a tight `SizedBox`: a tight height forces `AspectRatio`
+    // to derive width from it, and 248 * 4/3 = 330dp does not fit inside the
+    // 312dp of content width a 360dp phone has. A maximum lets the ratio be
+    // satisfied from whichever axis is scarcer, which is the width on a phone
+    // and the height on a tablet.
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: height),
+      child: AspectRatio(
+        aspectRatio: 4 / 3,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: AppSurfaces.warm(brightness),
+            borderRadius: BorderRadius.circular(AppTheme.radiusXl),
+            border: Border.all(color: theme.colorScheme.border),
+            boxShadow: AppSurfaces.lift(brightness),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppTheme.radiusXl),
+            child: AppNetworkImage(image: image),
+          ),
+        ),
       ),
-      child: Icon(icon, size: 52, color: theme.colorScheme.foreground),
     );
   }
 }
