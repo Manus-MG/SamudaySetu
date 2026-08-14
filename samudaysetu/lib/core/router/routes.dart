@@ -29,6 +29,26 @@ abstract final class AppRoutes {
   /// A member's view of the community they belong to.
   static const String myCommunity = '/community';
 
+  // ── What membership gets you ───────────────────────────────────────────────
+  //
+  // Nested under [myCommunity] on purpose. These screens only make sense to
+  // somebody who belongs somewhere, and the nesting means the router can guard
+  // the whole subtree with one prefix check instead of one rule per screen.
+
+  /// The events list. Sample content until the events API exists.
+  static const String communityEvents = '$myCommunity/events';
+
+  /// The parent segment for an unbuilt feature's "coming soon" screen. Never
+  /// navigated to bare — always via [communityFeature].
+  static const String communityFeatures = '$myCommunity/feature';
+
+  /// One sample event: `/community/events/<id>`.
+  static String communityEvent(String id) => '$communityEvents/$id';
+
+  /// One feature's preview: `/community/feature/<slug>`. The slug is
+  /// `CommunityFeature.slug`, which is why that field is ASCII and stable.
+  static String communityFeature(String slug) => '$communityFeatures/$slug';
+
   // ── Running a community ────────────────────────────────────────────────────
   //
   // A leader has no account on the web console — they sign in to this app by

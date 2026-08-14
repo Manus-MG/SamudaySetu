@@ -17,6 +17,11 @@ import '../../features/community/presentation/leader_dashboard_screen.dart';
 import '../../features/community/presentation/members_screen.dart';
 import '../../features/community/presentation/my_community_screen.dart';
 import '../../features/community/presentation/share_kit_screen.dart';
+import '../../features/community_features/data/sample_events.dart';
+import '../../features/community_features/domain/community_feature.dart';
+import '../../features/community_features/presentation/event_detail_screen.dart';
+import '../../features/community_features/presentation/events_screen.dart';
+import '../../features/community_features/presentation/feature_preview_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
@@ -51,7 +56,12 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   // Only the fields that can change a redirect decision. Listening to the whole
   // state would re-evaluate routing every time an unrelated field moved.
-  ref.listen<({SessionStatus status, bool onboardingSeen, UserRole? role})>(
+  ref.listen<({
+    SessionStatus status,
+    bool onboardingSeen,
+    UserRole? role,
+    String? communityId,
+  })>(
     sessionControllerProvider.select(
       (state) => (
         status: state.status,
@@ -59,6 +69,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         // A demotion or promotion changes which home screen is correct, so the
         // role belongs in this projection even though it rarely moves.
         role: state.user?.role,
+        // Leaving a community has to eject anyone standing inside /community/*,
+        // which only happens if a membership change re-runs the redirect.
+        communityId: state.user?.communityId,
       ),
     ),
     (_, _) => refresh.value++,
@@ -109,6 +122,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         }
         if (location.startsWith(AppRoutes.leader) && session.user?.role != UserRole.leader) {
           return AppRoutes.home;
+        }
+
+        // Everything *under* /community describes what belonging gets you, so
+        // it means nothing to somebody who belongs to nothing. The community
+        // screen itself is exempt: it has a proper "you have not joined" state
+        // with the join button on it, which is exactly where such a user should
+        // land. Guarded here rather than by hiding the tiles, because these
+        // paths are deep links people forward to each other.
+        final isCommunitySubPage =
+            location.startsWith('${AppRoutes.myCommunity}/');
+        if (isCommunitySubPage && session.user?.communityId == null) {
+          return AppRoutes.myCommunity;
         }
 
         return null;
@@ -254,6 +279,62 @@ final routerProvider = Provider<GoRouter>((ref) {
           key: state.pageKey,
           child: const MyCommunityScreen(),
         ),
+        routes: <RouteBase>[
+          // Nested, so every one of these keeps a back arrow to the community
+          // screen even when it was opened from a forwarded link.
+          GoRoute(
+            path: 'events',
+            pageBuilder: (context, state) => slidePage<void>(
+              key: state.pageKey,
+              child: const EventsScreen(),
+            ),
+            routes: <RouteBase>[
+              GoRoute(
+                path: ':eventId',
+                pageBuilder: (context, state) {
+                  final event = SampleEvents.byId(state.pathParameters['eventId']);
+
+                  // An unknown id — a stale link, or a sample that has since
+                  // been removed. The list is the honest answer; a detail
+                  // screen with empty fields is not.
+                  if (event == null) {
+                    return fadeThroughPage<void>(
+                      key: state.pageKey,
+                      child: const EventsScreen(),
+                    );
+                  }
+
+                  return slidePage<void>(
+                    key: state.pageKey,
+                    child: EventDetailScreen(event: event),
+                  );
+                },
+              ),
+            ],
+          ),
+          GoRoute(
+            path: 'feature/:slug',
+            pageBuilder: (context, state) {
+              final feature =
+                  CommunityFeature.fromSlug(state.pathParameters['slug']);
+
+              // A link to a feature this build does not know about. Older
+              // clients will hit this every time a new feature is announced,
+              // so it has to land somewhere sensible rather than crash.
+              if (feature == null) {
+                return fadeThroughPage<void>(
+                  key: state.pageKey,
+                  child: const MyCommunityScreen(),
+                );
+              }
+
+              return slidePage<void>(
+                key: state.pageKey,
+                child: FeaturePreviewScreen(feature: feature),
+              );
+            },
+          ),
+        ],
       ),
 
       // ── Running a community ────────────────────────────────────────────────

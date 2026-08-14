@@ -13,6 +13,7 @@ import '../../../core/widgets/async_view.dart';
 import '../../../core/widgets/entrance.dart';
 import '../../../core/widgets/share_actions.dart';
 import '../../auth/application/session_controller.dart';
+import '../../community_features/presentation/widgets/community_features_section.dart';
 import '../application/community_providers.dart';
 import '../domain/community.dart';
 
@@ -252,6 +253,14 @@ class _CommunityViewState extends ConsumerState<_CommunityView> {
               ),
             ),
           ),
+
+        const SizedBox(height: 28),
+
+        // The answer to "I joined — now what?". It sits below the identity card
+        // and the share card because both of those are things the member can
+        // act on today, and above the leave button because a list of reasons to
+        // stay should come before the way out.
+        Entrance.staggered(index: 2, child: const CommunityFeaturesSection()),
 
         if (_error != null) ...<Widget>[
           const SizedBox(height: 16),
