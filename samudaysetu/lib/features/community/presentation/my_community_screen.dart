@@ -9,6 +9,7 @@ import '../../../core/network/api_failure.dart';
 import '../../../core/providers.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_drawer.dart';
 import '../../../core/widgets/async_view.dart';
 import '../../../core/widgets/entrance.dart';
 import '../../../core/widgets/share_actions.dart';
@@ -30,13 +31,28 @@ class MyCommunityScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ShadTheme.of(context);
 
+    // Reached by a push from home in the normal case, and by a forwarded deep
+    // link in the other. The two need different chrome, and `AppBar` cannot
+    // decide for us: given a drawer it drops the back button and shows a
+    // hamburger instead, which would strand anyone who arrived by pushing.
+    final bool canPop = context.canPop();
+
     return Scaffold(
       backgroundColor: theme.colorScheme.background,
+      // A hub, not a leaf: everything a member does after joining starts here,
+      // so the sidebar comes with it.
+      drawer: const AppDrawer(),
       appBar: AppBar(
         backgroundColor: theme.colorScheme.background,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         title: const Text('मेरा समुदाय', style: TextStyle(fontSize: 18)),
+        // Back on the left, menu on the right — different intents, both one
+        // tap, neither left to an edge swipe nobody discovers. With nothing to
+        // pop back to, the leading slot is free and `AppBar` puts its own
+        // hamburger there, so the trailing one would be a duplicate.
+        leading: canPop ? const BackButton() : null,
+        actions: canPop ? const <Widget>[_MenuButton()] : null,
       ),
       body: SafeArea(
         child: RefreshIndicator(
@@ -50,6 +66,23 @@ class MyCommunityScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Opens the sidebar from the app bar's trailing slot.
+///
+/// Its own widget so that `Scaffold.of` resolves against the `Scaffold` this
+/// app bar belongs to.
+class _MenuButton extends StatelessWidget {
+  const _MenuButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: Scaffold.of(context).openDrawer,
+      tooltip: 'मेनू',
+      icon: const Icon(Icons.menu_rounded, size: 26),
     );
   }
 }

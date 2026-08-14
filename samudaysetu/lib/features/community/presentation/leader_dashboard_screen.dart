@@ -5,6 +5,7 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../../core/router/routes.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_drawer.dart';
 import '../../../core/widgets/async_view.dart';
 import '../../../core/widgets/entrance.dart';
 import '../../auth/application/session_controller.dart';
@@ -32,6 +33,10 @@ class LeaderDashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: theme.colorScheme.background,
+      // A landing screen, so it carries the sidebar. The leader's own
+      // destinations — members, invites, code, details — are otherwise only
+      // reachable by scrolling past the community header to the action list.
+      drawer: const AppDrawer(),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async => ref.invalidate(myCommunityProvider),
@@ -42,6 +47,8 @@ class LeaderDashboardScreen extends ConsumerWidget {
                 index: 0,
                 child: Row(
                   children: <Widget>[
+                    const _MenuButton(),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,6 +83,39 @@ class LeaderDashboardScreen extends ConsumerWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Opens the sidebar.
+///
+/// Its own widget so that `Scaffold.of` is called from a context *below* the
+/// `Scaffold` — calling it from the screen's own build method finds no scaffold
+/// and throws. This screen has no `AppBar`, so there is no automatic hamburger
+/// to inherit.
+class _MenuButton extends StatelessWidget {
+  const _MenuButton();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = ShadTheme.of(context);
+
+    return IconButton(
+      onPressed: Scaffold.of(context).openDrawer,
+      tooltip: 'मेनू',
+      icon: Icon(
+        Icons.menu_rounded,
+        size: 26,
+        color: theme.colorScheme.foreground,
+      ),
+      style: IconButton.styleFrom(
+        backgroundColor: theme.colorScheme.muted,
+        minimumSize: const Size(AppTheme.minTapTarget, AppTheme.minTapTarget),
+        padding: EdgeInsets.zero,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(AppTheme.radiusSm)),
         ),
       ),
     );

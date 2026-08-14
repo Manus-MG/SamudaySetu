@@ -4,6 +4,7 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/app_tappable.dart';
 import '../../domain/community_feature.dart';
 
 /// The answer to "I joined — now what?".
@@ -88,7 +89,7 @@ class _FeatureHighlight extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = ShadTheme.of(context);
 
-    return _Tappable(
+    return AppTappable(
       onTap: () => context.push(AppRoutes.communityEvents),
       borderRadius: 16,
       child: Container(
@@ -167,7 +168,7 @@ class _FeatureTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = ShadTheme.of(context);
 
-    return _Tappable(
+    return AppTappable(
       onTap: () => context.push(AppRoutes.communityFeature(feature.slug)),
       borderRadius: 14,
       child: Container(
@@ -244,46 +245,6 @@ class _StatusChip extends StatelessWidget {
           fontWeight: FontWeight.w600,
         ),
       ),
-    );
-  }
-}
-
-/// An ink-splashing tap target that clips to the child's own corner radius.
-///
-/// `InkWell` paints its splash on the nearest `Material` ancestor, which is
-/// *behind* a `Container` with its own background — so a bare `InkWell` around
-/// a decorated box produces a splash nobody can see. `Material` with a
-/// transparent type puts the ink surface in front of the decoration instead.
-class _Tappable extends StatelessWidget {
-  const _Tappable({
-    required this.onTap,
-    required this.child,
-    required this.borderRadius,
-  });
-
-  final VoidCallback onTap;
-  final Widget child;
-  final double borderRadius;
-
-  @override
-  Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(borderRadius);
-
-    return Stack(
-      // `passthrough` forwards the incoming constraints to the decorated child.
-      // Without it the child is laid out loose and a tile in a stretched row
-      // stops short of the row's height, leaving a visible gap under the
-      // shorter of the two.
-      fit: StackFit.passthrough,
-      children: <Widget>[
-        child,
-        Positioned.fill(
-          child: Material(
-            type: MaterialType.transparency,
-            child: InkWell(onTap: onTap, borderRadius: radius),
-          ),
-        ),
-      ],
     );
   }
 }

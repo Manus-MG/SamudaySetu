@@ -51,8 +51,25 @@
 	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
-	<key>UIMainStoryboardFile</key>
-	<string>Main</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Samuday Setu needs access to your camera to take profile and community photos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Samuday Setu needs access to your photo library to select photos and documents.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Samuday Setu needs permission to save images to your photo library.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Samuday Setu needs access to your location to help you find nearby communities and events.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Samuday Setu needs access to your microphone for audio recordings.</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>https</string>
+		<string>http</string>
+		<string>tel</string>
+		<string>mailto</string>
+		<string>sms</string>
+		<string>whatsapp</string>
+	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
