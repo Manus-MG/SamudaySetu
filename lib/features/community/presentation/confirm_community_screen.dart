@@ -60,9 +60,13 @@ class _ConfirmCommunityScreenState extends ConsumerState<ConfirmCommunityScreen>
       // `go`, not `push`: the code screen behind us must not be reachable with
       // the back button once membership exists.
       context.go(AppRoutes.joined, extra: community);
-    } on ApiFailure catch (failure) {
+    } on Object catch (error) {
+      // Everything, not just ApiFailure. An unanticipated exception here
+      // would escape past the `finally` that clears the spinner and leave
+      // the user with a button that silently does nothing.
+      final failure = ApiFailure.from(error);
       if (!mounted) return;
-      setState(() => _error = failure.displayMessage);
+      setState(() => _error = failure.debugDisplayMessage);
     } finally {
       if (mounted) setState(() => _isJoining = false);
     }

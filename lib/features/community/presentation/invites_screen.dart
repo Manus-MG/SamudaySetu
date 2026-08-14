@@ -104,9 +104,13 @@ class _InvitesState extends ConsumerState<_Invites> {
       _phone.clear();
       setState(() => _lastSent = sent);
       invalidateCommunityFrom(ref);
-    } on ApiFailure catch (failure) {
+    } on Object catch (error) {
+      // Everything, not just ApiFailure. An unanticipated exception here
+      // would escape past the `finally` that clears the spinner and leave
+      // the user with a button that silently does nothing.
+      final failure = ApiFailure.from(error);
       if (!mounted) return;
-      setState(() => _error = failure.displayMessage);
+      setState(() => _error = failure.debugDisplayMessage);
     } finally {
       if (mounted) setState(() => _isSending = false);
     }
@@ -117,9 +121,13 @@ class _InvitesState extends ConsumerState<_Invites> {
       await ref.read(communityApiProvider).revokeInvite(widget.communityId, inviteId);
       if (!mounted) return;
       invalidateCommunityFrom(ref);
-    } on ApiFailure catch (failure) {
+    } on Object catch (error) {
+      // Everything, not just ApiFailure. An unanticipated exception here
+      // would escape past the `finally` that clears the spinner and leave
+      // the user with a button that silently does nothing.
+      final failure = ApiFailure.from(error);
       if (!mounted) return;
-      setState(() => _error = failure.displayMessage);
+      setState(() => _error = failure.debugDisplayMessage);
     }
   }
 

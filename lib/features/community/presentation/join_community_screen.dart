@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -102,7 +103,11 @@ class _JoinCommunityScreenState extends ConsumerState<JoinCommunityScreen> {
       // is a small box over a busy background, and this is the one moment the
       // user must actually read something.
       context.push(AppRoutes.joinConfirm, extra: preview);
-    } on ApiFailure catch (failure) {
+    } on Object catch (error) {
+      // Everything, not just ApiFailure. An unanticipated exception here
+      // would escape past the `finally` that clears the spinner and leave
+      // the user with a button that silently does nothing.
+      final failure = ApiFailure.from(error);
       if (!mounted) return;
       setState(() => _error = _friendlyError(failure));
     } finally {
@@ -115,13 +120,18 @@ class _JoinCommunityScreenState extends ConsumerState<JoinCommunityScreen> {
   /// "NOT_FOUND" is the common case and almost always a typo, so it names the
   /// likely fix instead of restating the error.
   String _friendlyError(ApiFailure failure) {
+    // The friendly sentence still carries the technical suffix in debug builds:
+    // "code not found" is the right thing to tell a member and the least useful
+    // thing to tell someone debugging why a correct code is being rejected.
+    final detail = kDebugMode ? '\n\n[${failure.statusCode ?? '-'} ${failure.code}]' : '';
+
     if (failure.code == ApiErrorCode.notFound) {
-      return 'यह कोड नहीं मिला। कृपया दोबारा देखकर डालें।';
+      return 'यह कोड नहीं मिला। कृपया दोबारा देखकर डालें।$detail';
     }
     if (failure.code == ApiErrorCode.rateLimited) {
-      return 'बहुत बार कोशिश हुई। एक मिनट रुककर फिर से करें।';
+      return 'बहुत बार कोशिश हुई। एक मिनट रुककर फिर से करें।$detail';
     }
-    return failure.displayMessage;
+    return failure.debugDisplayMessage;
   }
 
   @override

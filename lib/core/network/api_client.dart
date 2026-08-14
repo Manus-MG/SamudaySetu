@@ -81,7 +81,15 @@ class ApiClient {
         messageHi: 'सर्वर से अप्रत्याशित उत्तर मिला',
         statusCode: response.statusCode,
       );
-    } on DioException catch (error) {
+    } on Object catch (error) {
+      // `Object`, not `DioException`. This is the boundary that makes the
+      // promise every screen relies on: **the API layer throws exactly one
+      // type.** A `TypeError` from a response whose shape drifted would
+      // otherwise sail past every `catch` in the app and surface as a button
+      // that does nothing.
+      //
+      // `ApiFailure.from` returns an `ApiFailure` unchanged, so the one thrown
+      // a few lines above passes through with its message intact.
       throw ApiFailure.from(error);
     }
   }

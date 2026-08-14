@@ -257,9 +257,13 @@ class _CodeBlockState extends ConsumerState<_CodeBlock> {
       if (!mounted) return;
       setState(() => _isConfirmingRotate = false);
       invalidateCommunityFrom(ref);
-    } on ApiFailure catch (failure) {
+    } on Object catch (error) {
+      // Everything, not just ApiFailure. An unanticipated exception here
+      // would escape past the `finally` that clears the spinner and leave
+      // the user with a button that silently does nothing.
+      final failure = ApiFailure.from(error);
       if (!mounted) return;
-      setState(() => _error = failure.displayMessage);
+      setState(() => _error = failure.debugDisplayMessage);
     } finally {
       if (mounted) setState(() => _isRotating = false);
     }
