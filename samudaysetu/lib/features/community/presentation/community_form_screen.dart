@@ -152,9 +152,13 @@ class _FormState extends ConsumerState<_Form> {
       if (!mounted) return;
       invalidateCommunityFrom(ref);
       context.pop();
-    } on ApiFailure catch (failure) {
+    } on Object catch (error) {
+      // Everything, not just ApiFailure. An unanticipated exception here
+      // would escape past the `finally` that clears the spinner and leave
+      // the user with a button that silently does nothing.
+      final failure = ApiFailure.from(error);
       if (!mounted) return;
-      setState(() => _error = failure.displayMessage);
+      setState(() => _error = failure.debugDisplayMessage);
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }

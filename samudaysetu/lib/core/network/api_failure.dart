@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 /// Stable, machine-readable error codes.
 /// Mirrors `backend/src/core/errors/errorCodes.ts` — branch on these, never on
@@ -56,8 +57,20 @@ class ApiFailure implements Exception {
     );
   }
 
-  /// Normalises anything Dio can throw. Never throws itself — an error handler
-  /// that can fail is an error handler that hides the real error.
+  /// Normalises **anything** into a failure the UI can show.
+  ///
+  /// The contract is absolute: this never throws, for any input. An error
+  /// handler that can itself fail turns a diagnosable problem into a button that
+  /// silently does nothing — the caller's `catch` does not match, the exception
+  /// escapes past the `finally` that resets the spinner, and the user is left
+  /// with no feedback at all.
+  ///
+  /// That is not hypothetical: this function used to throw `UnimplementedError`
+  /// on one `DioExceptionType`, and every screen catches only `ApiFailure`.
+  ///
+  /// It also accepts non-Dio errors — a `TypeError` from a response whose shape
+  /// drifted, for instance — so screens can funnel their whole `catch` through
+  /// it rather than only handling the failures they anticipated.
   factory ApiFailure.from(Object error) {
     if (error is ApiFailure) return error;
 
@@ -89,14 +102,18 @@ class ApiFailure implements Exception {
           );
         case DioExceptionType.cancel:
         case DioExceptionType.unknown:
+        case DioExceptionType.transformTimeout:
+          // `transformTimeout` belongs here rather than with the other timeouts:
+          // it means Dio's response *decoder* stalled, not the network, so
+          // "check your connection" would be actively misleading advice.
+          //
+          // It previously threw `UnimplementedError`. That is the worst possible
+          // behaviour for this function — see the guarantee documented above.
           return const ApiFailure(
             code: ApiErrorCode.internal,
             message: _genericEn,
             messageHi: _genericHi,
           );
-        case DioExceptionType.transformTimeout:
-          // TODO: Handle this case.
-          throw UnimplementedError();
       }
     }
 
@@ -118,6 +135,19 @@ class ApiFailure implements Exception {
 
   /// The app is Hindi-first, so prefer the Hindi copy the server sent.
   String get displayMessage => messageHi ?? message;
+
+  /// The Hindi message plus, **in debug builds only**, the status and error code.
+  ///
+  /// A member must never be shown `[404 NOT_FOUND]`; a developer staring at an
+  /// emulator wondering why a correct-looking code is rejected needs exactly
+  /// that. `kDebugMode` is a compile-time constant, so the branch and the string
+  /// are both tree-shaken out of a release build.
+  String get debugDisplayMessage {
+    if (!kDebugMode) return displayMessage;
+
+    final status = statusCode == null ? '' : '$statusCode ';
+    return '$displayMessage\n\n[$status$code]  ·  $message';
+  }
 
   /// True when the code means "this OTP attempt failed", as opposed to "the
   /// request never got there" — the OTP screen shakes for one and not the other.
