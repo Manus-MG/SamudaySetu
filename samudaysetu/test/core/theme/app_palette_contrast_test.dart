@@ -82,7 +82,7 @@ void main() {
     for (final (Color from, Color to) in AppPalette.avatarPairs) {
       for (final Color stop in <Color>[from, to]) {
         expect(
-          contrast(AppPalette.onSaffron, stop),
+          contrast(AppPalette.onTeak, stop),
           greaterThanOrEqualTo(aa),
           reason: 'avatar stop $stop cannot carry initials',
         );

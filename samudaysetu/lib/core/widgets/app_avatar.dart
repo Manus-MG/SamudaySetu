@@ -38,7 +38,7 @@ class AppAvatar extends StatelessWidget {
   ///
   /// `String.hashCode` would be the obvious choice and is the wrong one: Dart
   /// makes no guarantee that it is stable across releases or platforms, so the
-  /// same member could be orange on one build and indigo on the next. This is
+  /// same member could be orange on one build and forest on the next. This is
   /// eleven lines to make the mapping a fact rather than a coincidence.
   static int _stableHash(String value) {
     int hash = 0x811C9DC5;
@@ -75,7 +75,7 @@ class AppAvatar extends StatelessWidget {
         style: theme.textTheme.large.copyWith(
           // Every gradient in `avatarPairs` is dark enough that this clears
           // 4.5:1 against its *lighter* stop, so this is safe unconditionally.
-          color: AppPalette.onSaffron,
+          color: AppPalette.onTeak,
           fontSize: size * 0.36,
           height: 1,
           fontWeight: FontWeight.w600,

@@ -36,7 +36,7 @@ class AboutSamajScreen extends StatelessWidget {
         backgroundColor: theme.colorScheme.background,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        title: const Text('समाज परिचय', style: TextStyle(fontSize: 18)),
+        title: const Text('संघ परिचय', style: TextStyle(fontSize: 18)),
       ),
       body: SafeArea(
         child: ListView(
@@ -73,12 +73,13 @@ class AboutSamajScreen extends StatelessWidget {
 
             const SizedBox(height: 28),
 
-            // The name first. It is the one fact that explains the palette, the
-            // kuldevata and the whole rest of the screen at once.
+            // What the association is, first. A member reading this screen is
+            // deciding whether joining buys them anything; every panel below is
+            // detail on an answer this one has to give in three lines.
             Entrance.staggered(
               index: 1,
               child: _Panel(
-                title: 'अर्क का अर्थ',
+                title: SamajProfile.nameMeaningHeading,
                 child: Text(
                   SamajProfile.nameMeaning,
                   style: theme.textTheme.p.copyWith(
@@ -93,7 +94,7 @@ class AboutSamajScreen extends StatelessWidget {
             Entrance.staggered(
               index: 2,
               child: _Panel(
-                title: 'वंश परंपरा',
+                title: 'संघ की शुरुआत',
                 child: Text(
                   SamajProfile.origin,
                   style: theme.textTheme.p.copyWith(

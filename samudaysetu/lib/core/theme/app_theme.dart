@@ -59,48 +59,48 @@ abstract final class AppTheme {
           cardForeground: AppPalette.ink,
           popover: AppPalette.white,
           popoverForeground: AppPalette.ink,
-          primary: AppPalette.saffron600,
-          primaryForeground: AppPalette.onSaffron,
+          primary: AppPalette.teak600,
+          primaryForeground: AppPalette.onTeak,
           secondary: AppPalette.sand100,
           secondaryForeground: AppPalette.sand700,
           muted: AppPalette.sand100,
           mutedForeground: AppPalette.sand600,
-          accent: AppPalette.saffron100,
-          accentForeground: AppPalette.saffron700,
+          accent: AppPalette.teak100,
+          accentForeground: AppPalette.teak700,
           destructive: AppPalette.red700,
           destructiveForeground: AppPalette.onRed,
           border: AppPalette.sand200,
           input: AppPalette.sand200,
-          ring: AppPalette.saffron500,
-          selection: AppPalette.saffron200,
+          ring: AppPalette.teak500,
+          selection: AppPalette.teak200,
         ),
       );
 
   static ShadThemeData get dark => ShadThemeData(
         brightness: Brightness.dark,
         colorScheme: const ShadColorScheme(
-          background: AppPalette.indigo900,
+          background: AppPalette.forest900,
           foreground: Color(0xFFF2EDE6),
-          card: AppPalette.indigo850,
+          card: AppPalette.forest850,
           cardForeground: Color(0xFFF2EDE6),
-          popover: AppPalette.indigo850,
+          popover: AppPalette.forest850,
           popoverForeground: Color(0xFFF2EDE6),
-          // Brighter than the light theme's primary: on an indigo canvas the
-          // deep saffron that carries white text in daylight goes muddy.
-          primary: AppPalette.saffron400,
-          primaryForeground: AppPalette.onSaffronDark,
-          secondary: AppPalette.indigo700,
-          secondaryForeground: Color(0xFFE6E1F0),
-          muted: AppPalette.indigo800,
-          mutedForeground: AppPalette.indigo400,
-          accent: AppPalette.indigo750,
-          accentForeground: AppPalette.saffron200,
+          // Brighter than the light theme's primary: on a forest canvas the
+          // deep teak that carries white text in daylight goes muddy.
+          primary: AppPalette.teak400,
+          primaryForeground: AppPalette.onTeakDark,
+          secondary: AppPalette.forest700,
+          secondaryForeground: Color(0xFFE2E9E2),
+          muted: AppPalette.forest800,
+          mutedForeground: AppPalette.forest400,
+          accent: AppPalette.forest750,
+          accentForeground: AppPalette.teak200,
           destructive: AppPalette.red500,
           destructiveForeground: AppPalette.red950,
-          border: AppPalette.indigo750,
-          input: AppPalette.indigo750,
-          ring: AppPalette.saffron400,
-          selection: Color(0xFF4A3A1A),
+          border: AppPalette.forest750,
+          input: AppPalette.forest750,
+          ring: AppPalette.teak400,
+          selection: Color(0xFF4A3520),
         ),
       );
 
@@ -131,24 +131,25 @@ abstract final class AppTheme {
 /// cost one paint, unlike the stacked blurs and backdrop filters that make a
 /// 2 GB phone drop frames while scrolling.
 abstract final class AppSurfaces {
-  /// The brand surface. Deep indigo into warm saffron — the app's signature,
+  /// The brand surface. Deep forest into warm teak — the app's signature,
   /// used for the splash mark, the onboarding hero and the join-community call
-  /// to action.
+  /// to action. Standing timber into cut timber, which is the trade in one
+  /// image.
   ///
   /// Identical in both themes on purpose: a brand surface that changes colour
   /// with the system theme is not a brand surface.
   static const LinearGradient brand = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    // The middle stop is indigo600, not indigo500, and sits at 38% rather than
-    // 55%. Verified in a browser mock against the real join card: with the
-    // lighter indigo held to the midpoint, a tall element spends most of its
-    // height in violet — which is not a colour in this brand. Turning warm
-    // earlier keeps the surface reading as indigo-into-saffron.
+    // The middle stop is forest600, not forest500, and sits at 38% rather than
+    // 55%. Inherited from the Arkvanshi build, where holding the lighter stop
+    // at the midpoint left a tall element spending most of its height in the
+    // mid-hue rather than the brand's two ends. Turning warm early keeps the
+    // surface reading as forest-into-teak.
     colors: <Color>[
-      AppPalette.indigo700,
-      AppPalette.indigo600,
-      AppPalette.saffron700,
+      AppPalette.forest700,
+      AppPalette.forest600,
+      AppPalette.teak700,
     ],
     stops: <double>[0, 0.38, 1],
   );
@@ -158,8 +159,8 @@ abstract final class AppSurfaces {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: brightness == Brightness.light
-            ? const <Color>[AppPalette.saffron50, AppPalette.sand100]
-            : const <Color>[AppPalette.indigo850, AppPalette.indigo800],
+            ? const <Color>[AppPalette.teak50, AppPalette.sand100]
+            : const <Color>[AppPalette.forest850, AppPalette.forest800],
       );
 
   /// A top-to-bottom scrim for text laid over an image.

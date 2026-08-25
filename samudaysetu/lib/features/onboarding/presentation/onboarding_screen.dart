@@ -37,13 +37,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   static const List<_Slide> _slides = <_Slide>[
     _Slide(
       image: AppImages.onboardingCommunity,
-      title: 'अपने समुदाय से जुड़ें',
-      body: 'अपने समाज, संगठन या संस्था के सदस्यों की सूची एक ही जगह पर।',
+      title: 'अपने संघ से जुड़ें',
+      body: 'क्षेत्र के काष्ठ व्यापारियों और सदस्य फर्मों की सूची एक ही जगह पर।',
     ),
     _Slide(
       image: AppImages.onboardingStructure,
-      title: 'अपना संगठन देखें',
-      body: 'राष्ट्रीय स्तर से लेकर बूथ तक — पूरी संरचना स्पष्ट रूप से।',
+      title: 'पूरा संगठन एक नज़र में',
+      body: 'कार्यकारिणी से लेकर मंडी इकाई तक — संघ की पूरी संरचना स्पष्ट।',
     ),
     _Slide(
       image: AppImages.onboardingPrivacy,

@@ -12,48 +12,55 @@ import 'package:flutter/painting.dart';
 ///
 /// Two constraints chose the ramps:
 ///
-///  1. **Sunlight.** The target phone is used outdoors. Every foreground /
-///     background pair the theme derives from these stops clears WCAG AA
-///     (4.5:1); most clear AAA. That is verified, not assumed — see
-///     `test/core/theme/app_palette_contrast_test.dart`.
-///  2. **Warmth.** Saffron and marigold read as familiar and civic to the
-///     audience this is built for. Indigo supplies depth a single warm hue
-///     cannot, and keeps the dark theme from looking like a brown wash over
-///     black. Sand is the neutral — warm-tinted, never a pure grey, because
-///     pure grey next to saffron reads as dirty.
+///  1. **Sunlight.** The target phone is used outdoors — in a timber yard, in a
+///     mandi. Every foreground / background pair the theme derives from these
+///     stops clears WCAG AA (4.5:1); most clear AAA. That is verified, not
+///     assumed — see `test/core/theme/app_palette_contrast_test.dart`.
+///  2. **The trade.** Teak is the heartwood brown a timber merchant sees all
+///     day and can name on sight; forest is the green it is cut from. Sand is
+///     the neutral — warm-tinted, never a pure grey, because pure grey next to
+///     a wood brown reads as dust.
+///
+/// The stop *lightnesses* are inherited from the Arkvanshi build on `main`
+/// rather than rechosen. Only the hues moved. That is what keeps the contrast
+/// test passing across the re-brand instead of turning it into a week of
+/// nudging hex values.
 abstract final class AppPalette {
-  // ── Saffron: the brand hue. Actions, emphasis, brand marks. ────────────────
-  static const Color saffron50 = Color(0xFFFEF7EC);
-  static const Color saffron100 = Color(0xFFFBEBD0);
-  static const Color saffron200 = Color(0xFFF7D6A1);
-  static const Color saffron300 = Color(0xFFF2BA63);
-  static const Color saffron400 = Color(0xFFEC9F2E);
-  static const Color saffron500 = Color(0xFFD97706);
+  // ── Teak: the brand hue. Actions, emphasis, brand marks. ───────────────────
+  static const Color teak50 = Color(0xFFFBF5EF);
+  static const Color teak100 = Color(0xFFF4E6D6);
+  static const Color teak200 = Color(0xFFE8CBAC);
+  static const Color teak300 = Color(0xFFD6A97C);
+  static const Color teak400 = Color(0xFFC08A54);
+  static const Color teak500 = Color(0xFFA9663A);
 
-  /// The lightest saffron that still carries near-white text at 4.5:1, which is
-  /// why it — and not the brighter [saffron400] — is the light theme's primary.
-  static const Color saffron600 = Color(0xFFB45309);
-  static const Color saffron700 = Color(0xFF92400E);
-  static const Color saffron800 = Color(0xFF7C3A06);
-  static const Color saffron900 = Color(0xFF4A1F05);
+  /// The lightest teak that still carries near-white text at 4.5:1, which is
+  /// why it — and not the brighter [teak400] — is the light theme's primary.
+  static const Color teak600 = Color(0xFF8A4F2B);
+  static const Color teak700 = Color(0xFF6E3D20);
+  static const Color teak800 = Color(0xFF5A3019);
+  static const Color teak900 = Color(0xFF351C0E);
 
-  // ── Indigo: depth. Hero surfaces, the dark theme's canvas, ink. ────────────
-  static const Color indigo50 = Color(0xFFF1F0F7);
-  static const Color indigo100 = Color(0xFFDEDCEC);
-  static const Color indigo200 = Color(0xFFB9B5D6);
-  static const Color indigo300 = Color(0xFF8E88BC);
-  static const Color indigo400 = Color(0xFFA29CB5);
-  static const Color indigo500 = Color(0xFF443C7D);
-  static const Color indigo600 = Color(0xFF322B60);
-  static const Color indigo700 = Color(0xFF262045);
-  static const Color indigo750 = Color(0xFF2E2B45);
-  static const Color indigo800 = Color(0xFF24223A);
-  static const Color indigo850 = Color(0xFF1C1A2B);
-  static const Color indigo900 = Color(0xFF14131F);
+  // ── Forest: depth. Hero surfaces, the dark theme's canvas, ink. ────────────
+  static const Color forest50 = Color(0xFFEFF3EF);
+  static const Color forest100 = Color(0xFFDAE4DA);
+  static const Color forest200 = Color(0xFFB0C4B2);
+  static const Color forest300 = Color(0xFF84A088);
 
-  /// Body ink. Indigo-tinted rather than black: pure black on a warm background
+  /// Lighter than [forest300] on purpose: this is the dark theme's muted
+  /// foreground, and it has to clear AA on [forest900] and [forest800] both.
+  static const Color forest400 = Color(0xFF9DAF9E);
+  static const Color forest500 = Color(0xFF2E5138);
+  static const Color forest600 = Color(0xFF22402A);
+  static const Color forest700 = Color(0xFF1A3121);
+  static const Color forest750 = Color(0xFF24352A);
+  static const Color forest800 = Color(0xFF1E2A22);
+  static const Color forest850 = Color(0xFF16211A);
+  static const Color forest900 = Color(0xFF101812);
+
+  /// Body ink. Brown-tinted rather than black: pure black on a warm background
   /// looks like a hole punched in the page.
-  static const Color ink = Color(0xFF1B1A2E);
+  static const Color ink = Color(0xFF221C15);
 
   // ── Sand: the warm neutral. Backgrounds, cards, borders, secondary text. ───
   static const Color sand50 = Color(0xFFFDFBF7);
@@ -70,20 +77,20 @@ abstract final class AppPalette {
   static const Color red700 = Color(0xFFB91C1C);
   static const Color red950 = Color(0xFF2A0606);
 
-  static const Color onSaffron = Color(0xFFFFFBF5);
-  static const Color onSaffronDark = Color(0xFF2A1B04);
+  static const Color onTeak = Color(0xFFFFFBF5);
+  static const Color onTeakDark = Color(0xFF2A1B0C);
   static const Color onRed = Color(0xFFFFF7F7);
 
   /// Deterministic gradient pairs for identity avatars.
   ///
   /// Curated, not generated: an algorithmic hue-from-hash produces mint green
-  /// next to saffron sooner or later. Every pair is a brand-adjacent dark, so
-  /// [onSaffron]-weight text clears 4.5:1 on the *lighter* stop of every one of
+  /// next to teak sooner or later. Every pair is a brand-adjacent dark, so
+  /// [onTeak]-weight text clears 4.5:1 on the *lighter* stop of every one of
   /// them — the avatar can never render unreadable initials.
   static const List<(Color, Color)> avatarPairs = <(Color, Color)>[
-    (saffron600, saffron700),
-    (indigo500, indigo700),
-    (saffron800, saffron900),
+    (teak600, teak700),
+    (forest500, forest700),
+    (teak800, teak900),
     (Color(0xFF2F5D50), Color(0xFF1C3B32)),
     (Color(0xFF8A3B4F), Color(0xFF5C2434)),
     (Color(0xFF3A5A8C), Color(0xFF22395C)),

@@ -122,7 +122,7 @@ abstract final class AppDestinations {
   // ── Shared ─────────────────────────────────────────────────────────────────
 
   static const NavDestination _about = NavDestination(
-    label: 'समाज परिचय',
+    label: 'संघ परिचय',
     icon: Icons.auto_stories_rounded,
     route: AppRoutes.about,
   );
@@ -130,11 +130,11 @@ abstract final class AppDestinations {
   /// Offered to every role, including a member who has joined nothing.
   ///
   /// Every other section is about a member's own record and is therefore
-  /// gated on having one. This one is about the samaj, which is true of the
-  /// user before they join and stays true after — and for somebody deciding
+  /// gated on having one. This one is about the association, which is true of
+  /// the user before they join and stays true after — and for a trader deciding
   /// whether this app is *theirs*, it is the section that answers the question.
   static const NavSection _samaj = NavSection(
-    title: 'समाज',
+    title: 'संघ',
     destinations: <NavDestination>[_about],
   );
 

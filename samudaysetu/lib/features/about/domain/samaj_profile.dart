@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// One dated entry in the samaj's history.
+/// One dated entry in the association's history.
 @immutable
 class SamajMilestone {
   const SamajMilestone({
@@ -9,16 +9,16 @@ class SamajMilestone {
     required this.detail,
   });
 
-  /// Displayed verbatim, not parsed. Several of these are approximate or
-  /// disputed ("लगभग 918 ई.", "14वीं सदी"), and a `DateTime` would force a
-  /// precision the sources do not have.
+  /// Displayed verbatim, not parsed. Several of these are approximate, and a
+  /// `DateTime` would force a precision the association's own records may not
+  /// have.
   final String period;
 
   final String title;
   final String detail;
 }
 
-/// One value the samaj holds, as shown on the values grid.
+/// One principle the association holds, as shown on the values grid.
 @immutable
 class SamajValue {
   const SamajValue({
@@ -32,139 +32,144 @@ class SamajValue {
   final String detail;
 }
 
-/// Everything the app says about the Arkvanshi samaj, as data.
+/// Everything the app says about the association, as data.
 ///
-/// **This content is a draft, not an authority.** It was assembled from public
-/// community writing — `arkvanshikshatriya.blogspot.com`,
-/// `omkararkvanshikshatriya.blogspot.com` and the Wikipedia article on Sandila
-/// — and not from the samaj itself. Oral lineage history is contested by nature:
-/// dates shift by centuries between tellings, and which figures belong to the
-/// vansh is exactly the kind of claim a samaj is entitled to settle for itself.
-/// Every line below is expected to be corrected by the samaj's own elders
-/// before this is shown as fact.
+/// **This branch is the timber-trade build, and this content is a placeholder,
+/// not a record.** It was written to make the app demonstrable to a timber
+/// merchants' association before that association has supplied anything: the
+/// founding year, the office bearers, the milestones and the market towns below
+/// are plausible for a north-Indian timber body and true of none in particular.
+/// Every line is expected to be replaced with the association's own before this
+/// is shown as fact — showing invented history to people who know the real
+/// history is the fastest way to lose the room.
 ///
-/// That is the reason this file exists at all. The screens under
-/// `features/about/presentation/` read it and hold no copy of their own, so a
-/// correction is a one-line edit here by anyone who can open a text editor —
-/// no layout to understand, no widget to break.
+/// The class and file keep the names they had on `main` on purpose. This is a
+/// re-skin branch, not a refactor: the screens under
+/// `features/about/presentation/` read this file and hold no copy of their own,
+/// so a correction stays a one-line edit here by anyone who can open a text
+/// editor — no layout to understand, no widget to break, and no rename to
+/// reconcile when a fix lands on `main`.
 abstract final class SamajProfile {
-  /// What the name means. The single most-repeated point across every source,
-  /// and the one that earns the app its saffron palette.
-  static const String nameMeaning =
-      'अर्क का अर्थ ही सूर्य है। अर्कवंश सूर्यवंश की कोई शाखा नहीं, बल्कि उसी का '
-      'पर्यायवाची नाम है — उन सूर्यवंशी क्षत्रियों का नाम जिन्होंने सूर्य के '
-      'पर्याय "अर्क" से अपनी पहचान बनाई। समय के साथ यही नाम अर्कवंशी से अर्क, '
-      'अरक और अरख तक बोला जाता रहा।';
+  /// Heading over [nameMeaning] on the about screen.
+  ///
+  /// Lives here rather than in the widget because the Arkvanshi build had it
+  /// inline ('अर्क का अर्थ') and it was the one string the re-brand nearly
+  /// missed — a lineage heading sitting above timber-trade copy.
+  static const String nameMeaningHeading = 'संघ क्या है';
 
-  /// Origin and lineage.
+  /// What the association is. The first thing a prospective member reads.
+  static const String nameMeaning =
+      'काष्ठ व्यापार संघ लकड़ी के व्यापारियों, आरा मिल संचालकों, प्लाईवुड और '
+      'पैनल कारोबारियों का साझा मंच है। मंडी में अकेला व्यापारी न रेट पर बात कर '
+      'पाता है, न नीति पर — संघ वही आवाज़ है जो सबकी तरफ़ से एक साथ उठती है।';
+
+  /// Founding and standing. Replace with the association's own account.
   static const String origin =
-      'परंपरा के अनुसार अर्कवंशी क्षत्रिय भगवान श्री राम के पुत्र कुश की परंपरा '
-      'से चले आते हैं। सूर्य इस वंश के कुलदेवता हैं और समाज सदियों से सूर्य का '
-      'उपासक रहा है। अवध और उसके आसपास के क्षेत्रों में इस वंश के राजाओं ने लंबे '
-      'समय तक शासन किया।';
+      'संघ की स्थापना क्षेत्र के काष्ठ व्यापारियों ने मिलकर की, ताकि नाप-तौल, '
+      'भुगतान और माल की गुणवत्ता को लेकर आपसी भरोसा बना रहे। आज यह मंडी के '
+      'व्यापारियों, वन विभाग और खरीदारों के बीच की सीधी कड़ी है।';
 
   /// A note the app shows to the member, in the app's own voice.
   ///
-  /// Present because claiming certainty the sources do not have would be the
-  /// fastest way to lose the room in front of people who know this history
-  /// better than any website does.
+  /// Present because claiming certainty the app does not have would be the
+  /// fastest way to lose the room in front of people who run this trade.
   static const String sourceNote =
-      'यह विवरण सार्वजनिक रूप से उपलब्ध सामग्री से तैयार किया गया है। समाज के '
-      'वरिष्ठजनों के सुझाव पर इसे सुधारा और बढ़ाया जाएगा।';
+      'यह विवरण नमूने के तौर पर तैयार किया गया है। संघ के पदाधिकारियों से '
+      'प्राप्त जानकारी के आधार पर इसे बदला और पूरा किया जाएगा।';
 
-  /// Regions historically associated with the vansh, shown as chips.
+  /// Market towns the association's members trade in, shown as chips.
   static const List<String> regions = <String>[
-    'सांडीला',
-    'मलिहाबाद',
-    'खागा',
-    'फतेहपुर',
-    'कानपुर',
-    'प्रयागराज',
-    'बहराइच',
+    'गांधीधाम',
+    'यमुनानगर',
+    'नांगलोई',
+    'कीर्ति नगर',
+    'बरेली',
+    'गोरखपुर',
+    'लखनऊ',
   ];
 
   /// The history timeline, oldest first.
   static const List<SamajMilestone> milestones = <SamajMilestone>[
     SamajMilestone(
-      period: 'प्राचीन काल',
-      title: 'सूर्यवंश की परंपरा',
-      detail: 'श्री राम के पुत्र कुश की परंपरा से चली आ रही क्षत्रिय वंशावली, '
-          'जिसमें सूर्य को कुलदेवता माना गया।',
+      period: 'स्थापना',
+      title: 'मंडी के व्यापारियों की पहली बैठक',
+      detail: 'नाप, भुगतान और उधार को लेकर आपसी नियम तय करने के लिए क्षेत्र के '
+          'काष्ठ व्यापारी पहली बार एक मंच पर आए।',
     ),
     SamajMilestone(
-      period: 'महाराजा खंगारसेन',
-      title: 'खागा नगर की स्थापना',
-      detail: 'खागा नगर बसाया और दशाश्वमेध यज्ञ कराया — यह यज्ञ बिना पशुबलि के, '
-          'शाकाहारी विधि से संपन्न हुआ।',
+      period: 'पंजीकरण',
+      title: 'संघ का विधिवत गठन',
+      detail: 'संस्था के रूप में पंजीकरण, कार्यकारिणी का चुनाव और सदस्यता '
+          'नियमावली लागू।',
     ),
     SamajMilestone(
-      period: 'लगभग 918 ई.',
-      title: 'महाराजा तिलोकचंद्र',
-      detail: 'लगभग चौवन वर्ष का शासन। इंद्रप्रस्थ तक अपने राज्य का विस्तार '
-          'करने का उल्लेख मिलता है।',
+      period: 'आरा मिल नीति',
+      title: 'वन विभाग के साथ संवाद',
+      detail: 'आरा मिल लाइसेंस और परिवहन पास की प्रक्रिया पर विभाग के सामने '
+          'व्यापारियों का साझा पक्ष रखा गया।',
     ),
     SamajMilestone(
-      period: '1034 ई.',
-      title: 'महाराजा सुहेलदेव',
-      detail: 'बहराइच के युद्ध में विशाल आक्रमणकारी सेना को पराजित किया — अवध '
-          'की रक्षा की सबसे बड़ी स्मृतियों में एक।',
+      period: 'जीएसटी',
+      title: 'कर बदलाव पर सदस्य प्रशिक्षण',
+      detail: 'दरों और ई-वे बिल में बदलाव के समय सदस्यों के लिए कार्यशालाएँ, '
+          'ताकि छोटा व्यापारी भी अनुपालन में पीछे न रहे।',
     ),
     SamajMilestone(
-      period: 'मध्यकाल',
-      title: 'सांडीला और मलिहाबाद',
-      detail: 'महाराजा सल्हीय सिंह ने सांडीला और महाराजा मल्हीय सिंह ने '
-          'मलिहाबाद बसाया — दोनों नगर आज भी उन्हीं नामों से जाने जाते हैं।',
+      period: 'गुणवत्ता',
+      title: 'ग्रेडिंग पर साझा मानक',
+      detail: 'सागौन, साल और आयातित लकड़ी की ग्रेडिंग पर सदस्यों के बीच एक जैसी '
+          'भाषा — खरीदार के साथ विवाद घटाने के लिए।',
     ),
     SamajMilestone(
-      period: '14वीं सदी',
-      title: 'सांडीला का संघर्ष',
-      detail: 'चौदहवीं सदी के अंतिम दौर तक सांडीला पर अर्कवंशी शासन रहा। उस '
-          'शासन के अवशेष क्षेत्र के प्राचीन गढ़ों में आज भी दिखाई देते हैं।',
+      period: 'आज',
+      title: 'मंडी से बाज़ार तक',
+      detail: 'सदस्य फर्मों की जानकारी, बैठक की सूचना और विभागीय परिपत्र अब एक '
+          'ही जगह — यही ऐप उसी काम को आगे बढ़ाता है।',
     ),
   ];
 
-  /// Values, shown as a grid.
+  /// Principles, shown as a grid.
   static const List<SamajValue> values = <SamajValue>[
     SamajValue(
-      icon: Icons.wb_sunny_rounded,
-      title: 'सूर्य उपासना',
-      detail: 'कुलदेवता सूर्य — तेज, अनुशासन और नियमितता का प्रतीक।',
+      icon: Icons.straighten_rounded,
+      title: 'सही नाप',
+      detail: 'घन फुट की गिनती पर कोई दो राय नहीं — यही व्यापार की नींव है।',
     ),
     SamajValue(
-      icon: Icons.shield_rounded,
-      title: 'क्षात्र धर्म',
-      detail: 'अपने लोगों की रक्षा और दिए हुए वचन पर टिके रहना।',
-    ),
-    SamajValue(
-      icon: Icons.spa_rounded,
-      title: 'अहिंसा',
-      detail: 'यज्ञ बिना पशुबलि के — शक्ति के साथ संयम की परंपरा।',
-    ),
-    SamajValue(
-      icon: Icons.menu_book_rounded,
-      title: 'शिक्षा',
-      detail: 'हर पीढ़ी पिछली से आगे पढ़े — समाज की सबसे बड़ी पूँजी।',
+      icon: Icons.verified_rounded,
+      title: 'माल की गुणवत्ता',
+      detail: 'जो ग्रेड बताया, वही माल — ग्रेडिंग पर सदस्यों का साझा मानक।',
     ),
     SamajValue(
       icon: Icons.handshake_rounded,
-      title: 'एकता',
-      detail: 'गाँव और शहर में बिखरे परिवार, एक ही वंश की डोर से जुड़े।',
+      title: 'भुगतान का भरोसा',
+      detail: 'तय समय पर लेन-देन, और विवाद हो तो संघ के भीतर समाधान।',
     ),
     SamajValue(
-      icon: Icons.volunteer_activism_rounded,
-      title: 'सेवा',
-      detail: 'जरूरत के समय समाज का साथ — यही समाज होने का अर्थ है।',
+      icon: Icons.gavel_rounded,
+      title: 'नियम का पालन',
+      detail: 'लाइसेंस, परिवहन पास और कर — अनुपालन में कोई सदस्य पीछे न छूटे।',
+    ),
+    SamajValue(
+      icon: Icons.forest_rounded,
+      title: 'वन का सम्मान',
+      detail: 'वैध स्रोत से लकड़ी, और अगली पीढ़ी के लिए बचा हुआ जंगल।',
+    ),
+    SamajValue(
+      icon: Icons.groups_rounded,
+      title: 'एक आवाज़',
+      detail: 'नीति और रेट पर अकेला व्यापारी नहीं, पूरा संघ बात करता है।',
     ),
   ];
 
-  /// What the samaj wants the app to make possible. Deliberately phrased as
-  /// things a member can check later, not as sentiment.
+  /// What the association wants the app to make possible. Deliberately phrased
+  /// as things a member can check later, not as sentiment.
   static const List<String> objectives = <String>[
-    'समाज के सभी परिवारों की एक जगह पहचान और संपर्क',
-    'कार्यक्रम, बैठक और उत्सव की सूचना हर सदस्य तक समय पर',
-    'युवाओं के लिए शिक्षा और रोजगार की जानकारी साझा करना',
-    'विवाह और पारिवारिक संबंधों में समाज के भीतर सही जानकारी',
-    'वंश का इतिहास और परंपरा अगली पीढ़ी तक सुरक्षित पहुँचाना',
-    'जरूरतमंद परिवारों तक समाज की सहायता पहुँचाना',
+    'सदस्य फर्मों की पहचान, पता और संपर्क एक जगह',
+    'बैठक, कार्यशाला और वार्षिक अधिवेशन की सूचना हर सदस्य तक समय पर',
+    'वन विभाग और कर विभाग के परिपत्र बिना देरी सदस्यों तक',
+    'नाप, ग्रेडिंग और भुगतान के विवाद में संघ के भीतर सुनवाई',
+    'नए सदस्यों के लिए लाइसेंस और अनुपालन की सही जानकारी',
+    'खरीदार और आपूर्तिकर्ता के बीच सदस्यों का भरोसेमंद परिचय',
   ];
 }

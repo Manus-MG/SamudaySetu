@@ -58,9 +58,9 @@ class SplashScreen extends StatelessWidget {
                 // failure. These are the lightest values that still hold the
                 // wordmark at AA over the brightest part of the photo.
                 colors: <Color>[
-                  AppPalette.indigo900.withValues(alpha: 0.62),
-                  AppPalette.indigo700.withValues(alpha: 0.48),
-                  AppPalette.saffron900.withValues(alpha: 0.74),
+                  AppPalette.forest900.withValues(alpha: 0.62),
+                  AppPalette.forest700.withValues(alpha: 0.48),
+                  AppPalette.teak900.withValues(alpha: 0.74),
                 ],
               ),
             ),
@@ -88,10 +88,10 @@ class SplashScreen extends StatelessWidget {
                         curve: Motion.enter,
                       ),
                   const SizedBox(height: 6),
-                  // The lineage's own phrase, quieter than the wordmark. It is
-                  // the one line that tells an Arkvanshi member, in the first
-                  // second of the first launch, that this app was built for
-                  // them and not adapted to them.
+                  // The trade's own phrase, quieter than the wordmark. It is
+                  // the one line that tells a member, in the first second of
+                  // the first launch, that this app was built for them and not
+                  // adapted to them.
                   Text(
                     AppBrand.motto,
                     textAlign: TextAlign.center,

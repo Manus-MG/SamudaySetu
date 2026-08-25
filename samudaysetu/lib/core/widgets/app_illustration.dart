@@ -88,7 +88,7 @@ class AppIllustration extends StatelessWidget {
       IllustrationTone.onBrand => (
           AppPalette.white.withValues(alpha: 0.12),
           AppPalette.white.withValues(alpha: 0.92),
-          AppPalette.saffron200,
+          AppPalette.teak200,
         ),
       IllustrationTone.quiet => (
           colors.muted,
